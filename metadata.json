@@ -1,0 +1,5 @@
+{
+  "name": "ExoClim Branch 8: Planetary Climate Simulator",
+  "description": "A high-precision, physics-based climate simulator. Models radiation, heat transport, and topography to generate climate zones (Köppen classification) based on orbital and planetary parameters.",
+  "requestFramePermissions": []
+}
