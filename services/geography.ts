@@ -114,7 +114,14 @@ const generateProceduralMap = (rows: number, cols: number) => {
 
         const seaCount = Math.floor((1 - stats.landFrac) * cols);
         const landCount = cols - seaCount;
-        const seaLevelThreshold = seaCount < cols ? rowIndices[seaCount].val : 9999;
+        
+        // Fix for Polar Regions: 
+        // If seaCount == cols (100% ocean), we must select a valid threshold 
+        // slightly higher than the highest terrain point to ensure everything is underwater
+        // but not arbitrarily deep (avoiding 9999).
+        const seaLevelThreshold = seaCount < cols 
+            ? rowIndices[seaCount].val 
+            : (rowIndices[cols - 1].val + 0.05);
 
         for (let i = 0; i < seaCount; i++) {
             const item = rowIndices[i];
