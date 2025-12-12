@@ -57,7 +57,8 @@ export const DEFAULT_PHYSICS_PARAMS: PhysicsParams = {
   oceanEcDamping: 0.2, // Damping factor (Derivative gain D) to reduce overshoot
   oceanEcPolewardDrift: 1.5, // Initial poleward kick strength
   oceanEcLatGap: 7.5, // Separation between ITCZ and EC lines
-  
+  oceanSpawnOffset: 15.0, // Default safe spawn distance (grid cells)
+
   // 2.0 Collision Tuning
   oceanCollisionBuffer: 200.0, // km
   oceanSmoothing: 2.0, // iterations

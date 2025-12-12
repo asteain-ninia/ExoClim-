@@ -346,12 +346,14 @@ const Controls: React.FC<Props> = ({ planet, setPlanet, atm, setAtm, config, set
                  
                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-20">
                     <div className="bg-gray-900/40 p-2 rounded border border-gray-800 hover:border-cyan-900/30 transition-colors">
-                        <div className="text-[9px] font-bold text-gray-500 mb-2 uppercase">2.0 Collision (New)</div>
+                        <div className="text-[9px] font-bold text-gray-500 mb-2 uppercase">2.0 Collision & Spawn</div>
                         <div className="space-y-1">
                              <Slider label="衝突バッファ" value={phys.oceanCollisionBuffer} min={0} max={maxCollisionBuffer} step={10} unit="km" color="cyan"
                                 onChange={(v:number) => updatePhys('oceanCollisionBuffer', v)} defaultValue={DEFAULT_PHYSICS_PARAMS.oceanCollisionBuffer} />
                              <Slider label="平滑化強度" value={phys.oceanSmoothing} min={0} max={10} step={1} unit="iter" color="cyan"
                                 onChange={(v:number) => updatePhys('oceanSmoothing', v)} defaultValue={DEFAULT_PHYSICS_PARAMS.oceanSmoothing} />
+                             <Slider label="スポーン距離" value={phys.oceanSpawnOffset || 15.0} min={5.0} max={40.0} step={1} unit="cell" color="cyan"
+                                onChange={(v:number) => updatePhys('oceanSpawnOffset', v)} defaultValue={15.0} />
                         </div>
                     </div>
 

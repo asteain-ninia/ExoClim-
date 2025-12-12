@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { DebugSimulationData, DebugAgentSnapshot } from '../types';
 import { computeOceanCurrents } from '../services/physics/ocean'; // Unified Engine
@@ -21,20 +20,26 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
     const [hoverInfo, setHoverInfo] = useState<DebugAgentSnapshot | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Debug Controls
+    const [targetMonth, setTargetMonth] = useState<0 | 6>(6); // Default July
+
     const mapSize = { width: 800, height: 400 };
 
     useEffect(() => {
-        // Run simulation once on mount using the Main Physics Engine with debug flag
-        // Running for July (Month 6) as standard debug target
-        setTimeout(() => {
-            const result = computeOceanCurrents(grid, itczLines, phys, config, 6);
+        setLoading(true);
+        
+        const timer = setTimeout(() => {
+            const result = computeOceanCurrents(grid, itczLines, phys, config, targetMonth);
             if (result.debugData) {
                 setDebugData(result.debugData);
+                setCurrentStep(0);
+                setIsPlaying(true);
             }
             setLoading(false);
-            setIsPlaying(true);
         }, 100);
-    }, []);
+        
+        return () => clearTimeout(timer);
+    }, [grid, itczLines, config, phys, targetMonth]);
 
     // Playback Loop
     useEffect(() => {
@@ -113,8 +118,9 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
             ctx.beginPath();
             
             // Color Code
-            if (agent.state === 'active') {
-                if (agent.type === 'ECC') ctx.fillStyle = '#ff4400'; // Warm
+            if (agent.state === 'active' || agent.state === 'crawling') {
+                if (agent.state === 'crawling') ctx.fillStyle = '#d946ef'; // Magenta for crawling
+                else if (agent.type === 'ECC') ctx.fillStyle = '#ff4400'; // Warm
                 else ctx.fillStyle = '#00ccff'; // Cold
                 
                 // Size by velocity
@@ -147,7 +153,7 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
             ctx.fill();
 
             // Vector line
-            if (agent.state === 'active') {
+            if (agent.state === 'active' || agent.state === 'crawling') {
                 ctx.strokeStyle = 'rgba(255,255,255,0.5)';
                 ctx.lineWidth = 1;
                 ctx.moveTo(x, y);
@@ -197,18 +203,37 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
                 <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
                         <span className="text-red-500 font-mono text-xl">●</span>
-                        Ocean Physics Debugger (Unified Engine)
+                        海流物理デバッガー (Unified Engine)
                     </h2>
-                    <button onClick={onClose} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs transition-colors">
-                        Close [ESC]
+
+                    <div className="flex items-center gap-6">
+                        {/* Month Toggle */}
+                        <div className="flex bg-gray-800 rounded p-1 border border-gray-700">
+                             <button 
+                                onClick={() => setTargetMonth(0)} 
+                                className={`px-3 py-1 text-xs rounded font-bold transition-colors ${targetMonth===0 ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                             >
+                                 1月 (Summer S)
+                             </button>
+                             <button 
+                                onClick={() => setTargetMonth(6)} 
+                                className={`px-3 py-1 text-xs rounded font-bold transition-colors ${targetMonth===6 ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                             >
+                                 7月 (Summer N)
+                             </button>
+                        </div>
+                    </div>
+
+                    <button onClick={onClose} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs transition-colors border border-gray-700">
+                        閉じる [ESC]
                     </button>
                 </div>
 
                 {/* Main Content */}
                 <div className="flex-1 flex min-h-0 bg-gray-950 relative">
                     {/* Canvas Area */}
-                    <div className="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
-                         {loading && <div className="text-blue-400 animate-pulse">Calculating physics frames...</div>}
+                    <div className="flex-1 flex items-center justify-center p-4 overflow-hidden relative bg-black">
+                         {loading && <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10 text-blue-400 font-mono animate-pulse">物理シミュレーション計算中...</div>}
                          <canvas 
                             ref={canvasRef} 
                             width={mapSize.width} 
@@ -220,38 +245,41 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
                          
                          {/* Hover Info Tooltip */}
                          {hoverInfo && (
-                             <div className="absolute top-6 left-6 bg-black/90 border border-gray-500 text-xs text-white p-2 rounded pointer-events-none shadow-xl">
-                                 <div className="font-bold text-yellow-400 mb-1">Agent #{hoverInfo.id} ({hoverInfo.type})</div>
-                                 <div>Pos: {hoverInfo.x.toFixed(1)}, {hoverInfo.y.toFixed(1)}</div>
-                                 <div>Vel: {hoverInfo.vx.toFixed(2)}, {hoverInfo.vy.toFixed(2)}</div>
+                             <div className="absolute top-6 left-6 bg-black/90 border border-gray-500 text-xs text-white p-2 rounded pointer-events-none shadow-xl z-20">
+                                 <div className="font-bold text-yellow-400 mb-1">エージェント #{hoverInfo.id} ({hoverInfo.type})</div>
+                                 <div>位置: {hoverInfo.x.toFixed(1)}, {hoverInfo.y.toFixed(1)}</div>
+                                 <div>速度: {hoverInfo.vx.toFixed(2)}, {hoverInfo.vy.toFixed(2)}</div>
                                  <div className={`font-bold mt-1 ${
                                      hoverInfo.state === 'active' ? 'text-green-400' : 
+                                     hoverInfo.state === 'crawling' ? 'text-fuchsia-400' :
                                      hoverInfo.state === 'dead' ? 'text-gray-500' : 'text-red-400'
                                  }`}>
-                                     State: {hoverInfo.state.toUpperCase()}
+                                     状態: {hoverInfo.state.toUpperCase()}
                                  </div>
-                                 {hoverInfo.cause && <div className="text-red-300">Cause: {hoverInfo.cause}</div>}
+                                 {hoverInfo.cause && <div className="text-red-300">要因: {hoverInfo.cause}</div>}
                              </div>
                          )}
                     </div>
 
                     {/* Sidebar Stats */}
                     <div className="w-64 bg-gray-900 border-l border-gray-800 p-4 overflow-y-auto">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">Frame Info</h3>
+                        <h3 className="text-xs font-bold text-gray-500 uppercase mb-3">フレーム情報</h3>
                         <div className="space-y-2 text-xs font-mono text-gray-300">
-                             <div className="flex justify-between"><span>Step:</span> <span className="text-white">{currentStep}</span> / {debugData?.frames.length}</div>
-                             <div className="flex justify-between"><span>Active Agents:</span> <span className="text-blue-300">{debugData?.frames[currentStep]?.agents.filter(a=>a.state==='active').length}</span></div>
-                             <div className="flex justify-between"><span>Deaths/Impacts:</span> <span className="text-red-300">{debugData?.frames[currentStep]?.agents.filter(a=>a.state!=='active').length}</span></div>
+                             <div className="flex justify-between"><span>対象月:</span> <span className={targetMonth === 6 ? "text-red-400" : "text-blue-400"}>{targetMonth === 6 ? '7月 (夏)' : '1月 (冬)'}</span></div>
+                             <div className="flex justify-between"><span>ステップ:</span> <span className="text-white">{currentStep}</span> / {debugData?.frames.length}</div>
+                             <div className="flex justify-between"><span>活動中:</span> <span className="text-blue-300">{debugData?.frames[currentStep]?.agents.filter(a=>a.state==='active' || a.state==='crawling').length}</span></div>
+                             <div className="flex justify-between"><span>死亡/停滞:</span> <span className="text-red-300">{debugData?.frames[currentStep]?.agents.filter(a=>a.state!=='active' && a.state!=='crawling').length}</span></div>
                         </div>
 
-                        <h3 className="text-xs font-bold text-gray-500 uppercase mt-6 mb-3">Legend</h3>
+                        <h3 className="text-xs font-bold text-gray-500 uppercase mt-6 mb-3">凡例</h3>
                         <div className="space-y-2 text-xs text-gray-400">
-                             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#ff4400]"></span> ECC (Warm)</div>
-                             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#00ccff]"></span> EC (Cold)</div>
-                             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-yellow-500 border border-orange-500"></span> Stuck</div>
-                             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-white border border-red-500"></span> Impact</div>
-                             <div className="flex items-center gap-2"><span className="w-3 h-3 bg-red-900/50 border border-red-800"></span> Land/Wall</div>
-                             <div className="flex items-center gap-2"><span className="w-3 h-3 bg-blue-900/30 border border-blue-800"></span> Ocean</div>
+                             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#ff4400]"></span> ECC (暖流)</div>
+                             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#00ccff]"></span> EC (寒流)</div>
+                             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#d946ef]"></span> 這行 (Crawl)</div>
+                             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-yellow-500 border border-orange-500"></span> 停滞 (Stuck)</div>
+                             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-white border border-red-500"></span> 衝突 (Impact)</div>
+                             <div className="flex items-center gap-2"><span className="w-3 h-3 bg-red-900/50 border border-red-800"></span> 陸地 (Land)</div>
+                             <div className="flex items-center gap-2"><span className="w-3 h-3 bg-blue-900/30 border border-blue-800"></span> 海洋 (Ocean)</div>
                         </div>
                     </div>
                 </div>
@@ -262,7 +290,7 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
                         onClick={() => setIsPlaying(!isPlaying)}
                         className={`px-4 py-2 rounded font-bold text-xs w-20 transition-colors ${isPlaying ? 'bg-yellow-600 text-white hover:bg-yellow-500' : 'bg-green-600 text-white hover:bg-green-500'}`}
                      >
-                         {isPlaying ? 'PAUSE' : 'PLAY'}
+                         {isPlaying ? '一時停止' : '再生'}
                      </button>
                      
                      <div className="flex-1 flex flex-col justify-center">
@@ -278,13 +306,13 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
                             className="w-full accent-blue-500 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
                          />
                          <div className="flex justify-between text-[9px] text-gray-500 mt-1">
-                             <span>Start</span>
-                             <span>End</span>
+                             <span>開始</span>
+                             <span>終了</span>
                          </div>
                      </div>
 
                      <div className="flex items-center gap-2 border-l border-gray-700 pl-4">
-                         <span className="text-[10px] font-bold text-gray-400 uppercase">Speed</span>
+                         <span className="text-[10px] font-bold text-gray-400 uppercase">再生速度</span>
                          {[0.5, 1, 2, 5].map(s => (
                              <button 
                                 key={s}
