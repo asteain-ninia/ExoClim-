@@ -149,20 +149,6 @@ export interface OceanDiagnosticLog {
     message: string;
 }
 
-export interface SimulationResult {
-  grid: GridCell[];
-  globalTemp: number;
-  maxTemp: number;
-  minTemp: number;
-  hadleyWidth: number;
-  cellCount: number; // Number of circulation cells per hemisphere
-  itczLats: number[]; 
-  itczLines: number[][]; // [Month][LonIndex] -> Lat
-  oceanStreamlines: OceanStreamline[][]; // [Month (0=Jan, 6=Jul)][LineIndex]
-  impactPoints: OceanImpact[][]; // [Month][ImpactIndex]
-  diagnostics: OceanDiagnosticLog[]; // Debug logs from physics engine
-}
-
 // --- DEBUGGING TYPES ---
 export interface DebugAgentSnapshot {
     id: number;
@@ -186,4 +172,19 @@ export interface DebugSimulationData {
     width: number;
     height: number;
     itczLine: number[];
+}
+
+export interface SimulationResult {
+  grid: GridCell[];
+  globalTemp: number;
+  maxTemp: number;
+  minTemp: number;
+  hadleyWidth: number;
+  cellCount: number; // Number of circulation cells per hemisphere
+  itczLats: number[]; 
+  itczLines: number[][]; // [Month][LonIndex] -> Lat
+  oceanStreamlines: OceanStreamline[][]; // [Month (0=Jan, 6=Jul)][LineIndex]
+  impactPoints: OceanImpact[][]; // [Month][ImpactIndex]
+  diagnostics: OceanDiagnosticLog[]; // Debug logs from physics engine
+  debugData?: DebugSimulationData; // Optional full debug history
 }

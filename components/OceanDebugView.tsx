@@ -1,9 +1,8 @@
 
-
 import React, { useEffect, useRef, useState } from 'react';
 import { DebugSimulationData, DebugAgentSnapshot } from '../types';
-import { runDebugSimulation } from '../services/physics/oceanDebugger';
-import { SimulationResult, SimulationConfig, PhysicsParams } from '../types';
+import { computeOceanCurrents } from '../services/physics/ocean'; // Unified Engine
+import { SimulationConfig, PhysicsParams } from '../types';
 
 interface Props {
     grid: any[];
@@ -25,10 +24,13 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
     const mapSize = { width: 800, height: 400 };
 
     useEffect(() => {
-        // Run simulation once on mount
+        // Run simulation once on mount using the Main Physics Engine with debug flag
+        // Running for July (Month 6) as standard debug target
         setTimeout(() => {
-            const data = runDebugSimulation(grid, itczLines[6], phys, config);
-            setDebugData(data);
+            const result = computeOceanCurrents(grid, itczLines, phys, config, 6);
+            if (result.debugData) {
+                setDebugData(result.debugData);
+            }
             setLoading(false);
             setIsPlaying(true);
         }, 100);
@@ -66,8 +68,6 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
         const cellW = mapSize.width / cols;
         const cellH = mapSize.height / rows;
 
-        // Use a temp canvas for map to improve perf? Or just iterate. 
-        // For debug, simple iteration is fine.
         for(let r=0; r<rows; r++) {
             for(let c=0; c<cols; c++) {
                 const idx = r * cols + c;
@@ -155,13 +155,6 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
                 ctx.stroke();
             }
         });
-        
-        // Draw History/Trails for Dead/Stuck agents from THIS frame only (highlight)
-        // Or accumulating dead agents?
-        // To avoid clutter, let's keep it simple: agents disappear if they aren't in the frame, 
-        // unless they just died in this frame.
-        // (Note: The debug engine includes status='dead' for one frame then they might be removed in logic, 
-        // but here we just render what is in the frame array).
 
     }, [debugData, currentStep, mapSize]);
 
@@ -204,7 +197,7 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, onClos
                 <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
                         <span className="text-red-500 font-mono text-xl">●</span>
-                        Ocean Physics Debugger
+                        Ocean Physics Debugger (Unified Engine)
                     </h2>
                     <button onClick={onClose} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs transition-colors">
                         Close [ESC]
