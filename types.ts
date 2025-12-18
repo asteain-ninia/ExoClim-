@@ -1,5 +1,4 @@
 
-
 // 1. Inputs: Planet, Orbit, Star
 export interface PlanetParams {
   radius: number; // km
@@ -46,7 +45,27 @@ export interface PhysicsParams {
   itczKernelAngle: number; // degrees
   itczKernelMax: number; // degrees
 
-  // 2.1 Ocean Currents (New)
+  // 2. Wind Belts Tuning (New)
+  windHadleyWidthScale: number;
+  windJetSpacingExp: number;
+  windBaseSpeedEasterly: number;
+  windBaseSpeedWesterly: number;
+  windSpeedRotationExp: number;
+  windItczConvergenceSpeed: number;
+  windItczConvergenceWidth: number;
+  windPressureAnomalyMax: number;
+  windPressureBeltWidth: number;
+  windDoldrumsWidthDeg: number;
+  windTradePeakOffsetMode: 'abs' | 'hadleyFrac';
+  windTradePeakOffsetDeg: number;
+  windTradePeakOffsetFrac: number;
+  windTradePeakWidthDeg: number;
+  windTropicalUCap: number;
+  windOceanEcGapMode: 'manual' | 'derivedFromTradePeak';
+  windOceanEcGapClampMin: number;
+  windOceanEcGapClampMax: number;
+
+  // 3.1 Ocean Currents
   oceanShelfAngle: number; // degrees. Angle of incidence to trigger split.
   oceanDeflectLat: number; // degrees. Max deviation from ITCZ. Also determines EC separation (DeflectLat / 2).
   oceanStreamlineSteps: number; // Max steps for a current line
@@ -59,18 +78,18 @@ export interface PhysicsParams {
   oceanCoastRepulse: number; // Strength of coastline repulsion
   oceanWestwardAttractionFactor: number; // 0.0 - 1.0. Multiplier for ITCZ attraction when flowing West.
   
-  // 2.2 EC Tuning
+  // 3.2 EC Tuning
   oceanEcPatternForce: number; // Attraction force for EC towards separated target latitude (Spring Constant P)
   oceanEcDamping: number; // Damping factor to reduce oscillation (Derivative Gain D)
   oceanEcPolewardDrift: number; // Initial drift speed towards poles after split.
   oceanEcLatGap: number; // Degrees. Separation between ITCZ and EC lines.
   oceanSpawnOffset: number; // km. Distance to spawn EC agents away from the coast impact point.
 
-  // 2.0 Collision Tuning
+  // 3.0 Collision Tuning
   oceanCollisionBuffer: number; // km. Distance from coast to trigger collision.
   oceanSmoothing: number; // Iterations. Smoothing steps for collision map.
 
-  // 2.3 Advanced Flow Tuning (Newly Extracted)
+  // 3.3 Advanced Flow Tuning
   oceanSpawnSpeedMultiplier: number; // Multiplier for initial spawn speed (relative to baseSpeed)
   oceanCrawlSpeedMultiplier: number; // Multiplier for crawling speed along coast
   oceanMaxSpeedMultiplier: number; // Cap for absolute speed
@@ -92,10 +111,10 @@ export interface GridCell {
   // Step 1: ITCZ
   heatMapVal: number; // -1.0 (Ocean) to +1.0 (Land) for ITCZ calculation
 
-  // Step 2.0: Ocean Collision
+  // Step 3.0: Ocean Collision
   collisionMask: number; // -X (Safe) to +X (Wall). Smoothed distance field.
 
-  // Placeholders for removed logic
+  // Climate data
   insolation: number[]; 
   tempZonal: number[]; 
   windU: number[]; 
@@ -158,6 +177,20 @@ export interface OceanDiagnosticLog {
     message: string;
 }
 
+// --- Wind Belts Result ---
+export interface WindBeltsResult {
+    hadleyEdgeDeg: number;
+    cellBoundariesDeg: number[];
+    doldrumsHalfWidthDeg: number;
+    tradePeakOffsetDeg: number;
+    oceanEcLatGapDerived: number;
+    modelLevel: 'scaffold' | 'belts' | 'pressure' | 'trade';
+    debug: {
+        clampInfo?: string[];
+        paramsUsed: Record<string, number | string>;
+    };
+}
+
 // --- DEBUGGING TYPES ---
 export interface DebugAgentSnapshot {
     id: number;
@@ -192,6 +225,7 @@ export interface SimulationResult {
   cellCount: number; // Number of circulation cells per hemisphere
   itczLats: number[]; 
   itczLines: number[][]; // [Month][LonIndex] -> Lat
+  wind?: WindBeltsResult; // Step 2 Output
   oceanStreamlines: OceanStreamline[][]; // [Month (0=Jan, 6=Jul)][LineIndex]
   impactPoints: OceanImpact[][]; // [Month][ImpactIndex]
   diagnostics: OceanDiagnosticLog[]; // Debug logs from physics engine

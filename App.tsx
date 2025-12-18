@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Controls from './components/Controls';
 import MapVisualizer from './components/MapVisualizer';
@@ -94,16 +93,21 @@ const App: React.FC = () => {
   }, [planet, atm, phys, config, result]);
 
   const PIPELINE_STEPS = [
-      { id: 'elevation', label: '地形', desc: '標高・起伏', subSteps: [] },
+      { id: 'elevation', label: '地形データ', desc: '標高・起伏', subSteps: [] },
       { id: 'distCoast', label: 'Step 0', desc: '海岸距離', subSteps: [] },
       { id: 'step1', label: 'Step 1', desc: 'ITCZ', subSteps: [
-          { id: 'itcz_heatmap', label: '1.1 HeatMap' },
-          { id: 'itcz_result', label: '1.6 最終結果' }
+          { id: 'itcz_heatmap', label: '1.1 熱影響' },
+          { id: 'itcz_result', label: '1.6 算出緯度' }
       ]},
-      { id: 'step2', label: 'Step 2', desc: '海流', subSteps: [
-          { id: 'ocean_collision', label: '2.0 衝突判定'},
-          { id: 'oceanCurrent', label: '2.1 海流' }
+      { id: 'step2', label: 'Step 2', desc: '風帯解析', subSteps: [
+          { id: 'wind', label: '2.1 帯状風' },
+          { id: 'wind_belts', label: '2.2 風帯デバッグ' }
       ]},
+      { id: 'step3', label: 'Step 3', desc: '海流解析', subSteps: [
+          { id: 'ocean_collision', label: '3.0 衝突判定'},
+          { id: 'oceanCurrent', label: '3.1 循環流' }
+      ]},
+      { id: 'step4', label: 'Step 4', desc: '気流詳細', subSteps: [] },
   ];
 
   return (
@@ -172,6 +176,7 @@ const App: React.FC = () => {
                         const isSelected = viewMode === step.id || step.subSteps?.some(s => s.id === viewMode);
                         const isStep1 = step.id === 'step1';
                         const isStep2 = step.id === 'step2';
+                        const isStep3 = step.id === 'step3';
 
                         return (
                             <div key={step.id} className="flex gap-0.5">
@@ -201,7 +206,7 @@ const App: React.FC = () => {
                                     </span>
                                 </button>
                                 
-                                {(isStep1 || isStep2) && (
+                                {(isStep1 || isStep2 || isStep3) && (
                                     <div className="flex flex-col gap-0.5 ml-0.5">
                                         {step.subSteps?.map(sub => (
                                             <button
@@ -275,7 +280,7 @@ const App: React.FC = () => {
       {/* Footer */}
       <div className="h-7 flex-shrink-0 bg-gray-950 border-t border-gray-800 flex items-center justify-between px-4 text-[10px] text-gray-500 select-none z-20 font-mono">
           <div className="flex gap-4 items-center">
-               <span className="text-blue-400/80 font-bold hover:text-blue-300 transition-colors">ExoClim Engine v6.0</span>
+               <span className="text-blue-400/80 font-bold hover:text-blue-300 transition-colors">ExoClim 演算エンジン v6.0</span>
                <span className="hidden sm:inline w-px h-3 bg-gray-800"></span>
                <span className="hidden sm:inline hover:text-gray-300 transition-colors">React 19 + D3.js + Recharts</span>
           </div>

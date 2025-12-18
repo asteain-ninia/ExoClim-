@@ -7,7 +7,7 @@ import Legend from './visualizer/Legend';
 
 interface Props {
   data: SimulationResult | null;
-  mode: 'temp' | 'precip' | 'distCoast' | 'climate' | 'insolation' | 'wind' | 'tempZonal' | 'oceanCurrent' | 'elevation' | 'hadley' | 'itcz_heatmap' | 'itcz_result' | 'ocean_collision';
+  mode: 'temp' | 'precip' | 'distCoast' | 'climate' | 'insolation' | 'wind' | 'wind_belts' | 'tempZonal' | 'oceanCurrent' | 'elevation' | 'hadley' | 'itcz_heatmap' | 'itcz_result' | 'ocean_collision';
   width: number;
   height: number;
   displayMonth: 'annual' | 0 | 6; 
@@ -38,17 +38,18 @@ const MapVisualizer: React.FC<Props> = ({ data, mode, width, height, displayMont
   const modeLabels: Record<string, string> = {
       'temp': '気温 (実測)',
       'precip': '降水量',
-      'distCoast': '海岸距離',
+      'distCoast': 'Step 0: 海岸距離',
       'climate': 'ケッペン気候区分',
       'insolation': '日射量',
-      'wind': '気圧・風配図',
+      'wind': 'Step 2.1: 抽象帯状風',
+      'wind_belts': 'Step 2.2: 風帯デバッグ表示',
       'tempZonal': '帯状平均温度',
-      'oceanCurrent': '海流',
-      'elevation': '地形・標高',
+      'oceanCurrent': 'Step 3.1: 海流・循環流',
+      'elevation': '地形・標高データ',
       'hadley': '大気循環・ITCZ',
-      'itcz_heatmap': 'ステップ 1.1: 熱影響マップ',
-      'itcz_result': 'ステップ 1.6: ITCZ 算出結果',
-      'ocean_collision': 'ステップ 2.0: 衝突判定'
+      'itcz_heatmap': 'Step 1.1: 熱影響マップ',
+      'itcz_result': 'Step 1.6: ITCZ 算出緯度',
+      'ocean_collision': 'Step 3.0: 海流衝突判定'
   };
 
   // --- Rendering to Buffer ---

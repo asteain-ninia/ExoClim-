@@ -1,5 +1,4 @@
 
-
 import { PlanetParams, AtmosphereParams, SimulationConfig, PhysicsParams } from './types';
 
 export const EARTH_PARAMS: PlanetParams = {
@@ -39,6 +38,26 @@ export const DEFAULT_PHYSICS_PARAMS: PhysicsParams = {
   itczKernelAngle: 15.0,
   itczKernelMax: 60.0,
 
+  // Wind Belts Tuning
+  windHadleyWidthScale: 1.0,
+  windJetSpacingExp: 1.2,
+  windBaseSpeedEasterly: 5.0,
+  windBaseSpeedWesterly: 8.0,
+  windSpeedRotationExp: 0.5,
+  windItczConvergenceSpeed: 2.0,
+  windItczConvergenceWidth: 10.0,
+  windPressureAnomalyMax: 20.0,
+  windPressureBeltWidth: 8.0,
+  windDoldrumsWidthDeg: 6.0,
+  windTradePeakOffsetMode: 'abs',
+  windTradePeakOffsetDeg: 8.0,
+  windTradePeakOffsetFrac: 0.25,
+  windTradePeakWidthDeg: 10.0,
+  windTropicalUCap: 10.0,
+  windOceanEcGapMode: 'manual',
+  windOceanEcGapClampMin: 2.0,
+  windOceanEcGapClampMax: 20.0,
+
   // Ocean Currents
   oceanShelfAngle: 70.0, // Angle of incidence. Larger = Splits more easily (70 means even glancing blows split)
   oceanDeflectLat: 15.0, // degrees. Max deviation from ITCZ. Also determines EC separation (DeflectLat / 2).
@@ -52,18 +71,18 @@ export const DEFAULT_PHYSICS_PARAMS: PhysicsParams = {
   oceanCoastRepulse: 0.3,
   oceanWestwardAttractionFactor: 0.05, // Weak attraction when moving West to allow detours
   
-  // 2.2 EC Tuning
+  // 3.2 EC Tuning
   oceanEcPatternForce: 0.15, // Attraction force for EC towards separated target latitude (Spring constant P)
   oceanEcDamping: 0.2, // Damping factor (Derivative gain D) to reduce overshoot
   oceanEcPolewardDrift: 1.5, // Initial poleward kick strength
   oceanEcLatGap: 7.5, // Separation between ITCZ and EC lines
   oceanSpawnOffset: 15.0, // Default safe spawn distance (grid cells)
 
-  // 2.0 Collision Tuning
+  // 3.0 Collision Tuning
   oceanCollisionBuffer: 200.0, // km
   oceanSmoothing: 2.0, // iterations
 
-  // 2.3 Advanced Flow Tuning
+  // 3.3 Advanced Flow Tuning
   oceanSpawnSpeedMultiplier: 0.8,
   oceanCrawlSpeedMultiplier: 1.2,
   oceanMaxSpeedMultiplier: 3.0,
@@ -71,8 +90,6 @@ export const DEFAULT_PHYSICS_PARAMS: PhysicsParams = {
   oceanRepulseStrength: 0.5,
   oceanImpactThreshold: 0.05,
 };
-
-// Removed standalone ITCZ_PARAMS to ensure usage of mutable PhysicsParams
 
 export const RESOLUTION_PRESETS = [
     { label: '低解像度 (90x180)', lat: 90, lon: 180 },

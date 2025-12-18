@@ -1,7 +1,7 @@
 
-
 import { GridCell, PlanetParams, AtmosphereParams, SimulationConfig, SimulationResult, PhysicsParams } from '../types';
 import { computeCirculation } from './physics/circulation';
+import { computeWindBelts } from './physics/windBelts';
 import { computeOceanCurrents } from './physics/ocean';
 export { initializeGrid } from './geography';
 
@@ -17,9 +17,6 @@ export const runSimulation = async (
   onProgress(10, "Initializing Grid...", 'elevation');
   
   // Step 0: Geography is already set by initializeGrid (passed in as `grid`)
-  // We just ensure all other fields are zeroed out or set to defaults.
-  const rotationSign = planet.isRetrograde ? -1 : 1;
-
   for (const cell of grid) {
       // Clear Data
       cell.insolation = new Array(12).fill(0);
@@ -27,50 +24,44 @@ export const runSimulation = async (
       cell.oceanCurrent = 0;
       cell.temp = new Array(12).fill(0);
       cell.pressure = new Array(12).fill(1013);
-      
-      // Calculate simple Zonal Wind based on latitude and rotation direction
-      // 0-30: Easterlies (-), 30-60: Westerlies (+), 60+: Easterlies (-)
-      // If Retrograde, flip sign.
-      const latAbs = Math.abs(cell.lat);
-      let baseU = 0;
-      if (latAbs < 30) baseU = -5;
-      else if (latAbs < 60) baseU = 8;
-      else baseU = -2;
-      
-      const u = baseU * rotationSign;
-
-      cell.windU = new Array(12).fill(u);
+      cell.windU = new Array(12).fill(0);
       cell.windV = new Array(12).fill(0);
       cell.uplift = new Array(12).fill(0);
       cell.hadleyCell = new Array(12).fill(0);
       cell.moisture = new Array(12).fill(0);
       cell.precip = new Array(12).fill(0);
-      cell.heatMapVal = 0; // Reset Step 1
-      cell.collisionMask = 0; // Reset Step 2.0
-      
-      // Default Climate Class (Unknown)
+      cell.heatMapVal = 0; 
+      cell.collisionMask = 0; 
       cell.climateClass = cell.isLand ? '?' : 'Oc';
   }
 
-  // Fake delay for UX
   await new Promise(r => setTimeout(r, 50));
 
   // --- Step 1: ITCZ & Circulation ---
-  onProgress(20, "Step 1: Calculating ITCZ...", 'itcz_heatmap');
+  onProgress(20, "Step 1: Calculating ITCZ...", 'step1');
   const circulationRes = computeCirculation(grid, planet, atm, phys, config);
   
-  // Update grid with dummy circulation data for now (removed logic placeholders)
-  // But we retain the itczLines for the result
+  await new Promise(r => setTimeout(r, 50));
+
+  // --- Step 2: Wind Belts ---
+  onProgress(40, "Step 2: Calculating Wind Belts...", 'step2');
+  const windRes = computeWindBelts(grid, circulationRes, planet, atm, phys, config);
   
   await new Promise(r => setTimeout(r, 50));
 
-  // --- Step 2: Ocean Currents ---
-  onProgress(40, "Step 2: Ocean Collision Field...", 'ocean_collision');
+  // --- Step 3: Ocean Currents ---
+  onProgress(60, "Step 3.0: Ocean Collision Field...", 'step3');
   await new Promise(r => setTimeout(r, 50));
   
-  onProgress(50, "Step 2.1: Ocean Currents...", 'oceanCurrent');
-  const oceanRes = computeOceanCurrents(grid, circulationRes.itczLines, phys, config, planet);
+  onProgress(80, "Step 3.1: Ocean Currents...", 'step3');
+  // Pass potentially modified physics for gap alignment (manual mode for now)
+  const physForOcean = { ...phys, oceanEcLatGap: windRes.oceanEcLatGapDerived };
+  const oceanRes = computeOceanCurrents(grid, circulationRes.itczLines, physForOcean, config, planet);
 
+  await new Promise(r => setTimeout(r, 50));
+
+  // --- Step 4: Airflow Detailed ---
+  onProgress(95, "Step 4: Refining Airflow...", 'step4');
   await new Promise(r => setTimeout(r, 50));
 
   onProgress(100, "Ready", undefined);
@@ -82,8 +73,9 @@ export const runSimulation = async (
       minTemp: 0,
       hadleyWidth: circulationRes.hadleyWidth, 
       cellCount: circulationRes.cellCount,
-      itczLats: new Array(12).fill(0), // Deprecated simple array
+      itczLats: new Array(12).fill(0), 
       itczLines: circulationRes.itczLines,
+      wind: windRes,
       oceanStreamlines: oceanRes.streamlines,
       impactPoints: oceanRes.impacts,
       diagnostics: oceanRes.diagnostics

@@ -35,10 +35,6 @@ const Legend: React.FC<{ mode: string }> = ({ mode }) => {
                              <div className="w-6 h-0 border-t border-white border-dashed"></div>
                              <span className="text-[10px] text-gray-400">ITCZ (収束中心線)</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                             <div className="w-6 h-0 border-t border-cyan-400 border-dashed"></div>
-                             <span className="text-[10px] text-cyan-200">EC 誘導ライン</span>
-                        </div>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-700">
                              <span className="text-red-500 font-bold text-lg leading-none">×</span>
                              <span className="text-[10px] text-red-200">暖流の沿岸衝突 (ECC)</span>
@@ -47,14 +43,26 @@ const Legend: React.FC<{ mode: string }> = ({ mode }) => {
                              <span className="text-cyan-400 font-bold text-lg leading-none">+</span>
                              <span className="text-[10px] text-cyan-200">寒流の沿岸衝突 (EC)</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-700">
-                             <div className="w-6 h-0 border-t border-red-500 border-solid"></div>
-                             <span className="text-[10px] text-red-400 font-bold">衝突判定境界 (壁)</span>
-                        </div>
-                        <div className="p-2 bg-blue-900/40 rounded border border-blue-800 text-[10px] text-blue-200 mt-2">
-                             <p className="mb-1">海流エージェントは重複が自動的に統合され、主要な流路のみが可視化されています。</p>
-                        </div>
                     </div>
+                </div>
+            );
+        case 'wind':
+        case 'wind_belts':
+            return (
+                <div className={containerClass}>
+                    <h4 className={titleClass}>{mode === 'wind_belts' ? '風帯デバッグ表示' : '抽象帯状風と気圧帯'}</h4>
+                    <div className="h-4 w-full rounded-sm mb-1 border border-gray-700"
+                        style={{ background: 'linear-gradient(to right, #2166ac, #f7f7f7, #b2182b)' }}
+                    ></div>
+                    <div className={`flex justify-between text-[10px] font-mono ${labelClass}`}>
+                        <span>低圧 (青)</span><span>1013hPa</span><span>高圧 (赤)</span>
+                    </div>
+                    <p className="text-[9px] text-gray-400 mt-2 leading-tight">背景色は気圧、明るさは風速（東西U+南北V）を表現しています。</p>
+                    {mode === 'wind_belts' && (
+                        <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-700/50 rounded text-[9px] text-yellow-200">
+                            ※将来的に循環セルの境界線や貿易風のピークがここに重畳表示されます。
+                        </div>
+                    )}
                 </div>
             );
         case 'itcz_heatmap':
@@ -67,26 +75,6 @@ const Legend: React.FC<{ mode: string }> = ({ mode }) => {
                     <div className={`flex justify-between text-[10px] font-mono ${labelClass}`}>
                         <span>外洋 (-1.0)</span><span>中央</span><span>内陸 (+1.0)</span>
                     </div>
-                    <p className="text-[9px] text-gray-400 mt-2 leading-tight">赤い領域ほどITCZ（熱帯収束帯）を極方向に引き寄せる熱源として機能します。</p>
-                </div>
-            );
-        case 'ocean_collision':
-             return (
-                <div className={containerClass}>
-                    <h4 className={titleClass}>衝突判定フィールド</h4>
-                    <div className="h-4 w-full rounded-sm mb-1 border border-gray-700"
-                        style={{ background: 'linear-gradient(to right, #2166ac, #f7f7f7, #b2182b)' }}
-                    ></div>
-                    <div className={`flex justify-between text-[10px] font-mono ${labelClass}`}>
-                        <span>安全 (海洋)</span><span>境界 (0)</span><span>衝突壁面 (陸地)</span>
-                    </div>
-                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-700">
-                             <div className="w-6 h-0 border-t border-white border-solid"></div>
-                             <span className="text-[10px] text-gray-300 font-bold">有効壁面ライン</span>
-                    </div>
-                     <div className="p-2 bg-red-900/40 rounded border border-red-800 text-[10px] text-red-200 mt-2">
-                         <p>赤い領域 (>0) は「壁」として物理認識され、海流エージェントが反射または這行します。</p>
-                     </div>
                 </div>
             );
         case 'itcz_result':
@@ -130,15 +118,6 @@ const Legend: React.FC<{ mode: string }> = ({ mode }) => {
                     <div className={`flex justify-between text-[10px] font-mono ${labelClass}`}>
                         <span>0mm</span><span>多雨</span>
                     </div>
-                </div>
-            );
-        case 'insolation':
-            return (
-                <div className={containerClass}>
-                    <h4 className={titleClass}>太陽放射量</h4>
-                    <div className="h-4 w-full rounded-sm mb-1 border border-gray-700"
-                        style={{ background: 'linear-gradient(to right, #ffffb2, #fd8d3c, #bd0026)' }}
-                    ></div>
                 </div>
             );
         case 'distCoast':
