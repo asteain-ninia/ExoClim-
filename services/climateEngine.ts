@@ -3,6 +3,7 @@ import { GridCell, PlanetParams, AtmosphereParams, SimulationConfig, SimulationR
 import { computeCirculation } from './physics/circulation';
 import { computeWindBelts } from './physics/windBelts';
 import { computeOceanCurrents } from './physics/ocean';
+import { computeAirflowDetailed } from './physics/airflow';
 export { initializeGrid } from './geography';
 
 export const runSimulation = async (
@@ -54,7 +55,7 @@ export const runSimulation = async (
   await new Promise(r => setTimeout(r, 50));
   
   onProgress(80, "Step 3.1: Ocean Currents...", 'step3');
-  // Pass potentially modified physics for gap alignment (manual mode for now)
+  // Unit G: Pass derived gap for alignment
   const physForOcean = { ...phys, oceanEcLatGap: windRes.oceanEcLatGapDerived };
   const oceanRes = computeOceanCurrents(grid, circulationRes.itczLines, physForOcean, config, planet);
 
@@ -62,6 +63,7 @@ export const runSimulation = async (
 
   // --- Step 4: Airflow Detailed ---
   onProgress(95, "Step 4: Refining Airflow...", 'step4');
+  computeAirflowDetailed(grid, circulationRes, windRes, oceanRes, planet, atm, phys, config);
   await new Promise(r => setTimeout(r, 50));
 
   onProgress(100, "Ready", undefined);

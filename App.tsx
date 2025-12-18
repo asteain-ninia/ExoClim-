@@ -4,7 +4,8 @@ import Controls from './components/Controls';
 import MapVisualizer from './components/MapVisualizer';
 import Charts from './components/Charts';
 import TestOverlay from './components/TestOverlay';
-import OceanDebugView from './components/OceanDebugView'; // New Import
+import OceanDebugView from './components/OceanDebugView';
+import WindDebugView from './components/WindDebugView';
 import { EARTH_PARAMS, EARTH_ATMOSPHERE, DEFAULT_CONFIG, DEFAULT_PHYSICS_PARAMS } from './constants';
 import { runSimulation } from './services/climateEngine.ts';
 import { initializeGrid } from './services/geography';
@@ -21,7 +22,8 @@ const App: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [loadingLabel, setLoadingLabel] = useState("初期化中...");
   const [showTests, setShowTests] = useState(false);
-  const [showOceanDebug, setShowOceanDebug] = useState(false); // New State
+  const [showOceanDebug, setShowOceanDebug] = useState(false);
+  const [showWindDebug, setShowWindDebug] = useState(false);
   
   // 'annual' or 0 (Jan) or 6 (July)
   const [displayMonth, setDisplayMonth] = useState<'annual' | 0 | 6>('annual');
@@ -114,7 +116,7 @@ const App: React.FC = () => {
     <div className="flex flex-col h-screen w-full bg-gray-950 text-gray-100 font-sans relative overflow-hidden">
       {showTests && <TestOverlay onClose={() => setShowTests(false)} currentResult={result} />}
       
-      {/* New Debug Overlay */}
+      {/* Ocean Debug Overlay */}
       {showOceanDebug && result && (
           <OceanDebugView 
              grid={result.grid}
@@ -125,6 +127,14 @@ const App: React.FC = () => {
              cellCount={result.cellCount}
              hadleyWidth={result.hadleyWidth}
              onClose={() => setShowOceanDebug(false)}
+          />
+      )}
+
+      {/* Wind Debug Overlay */}
+      {showWindDebug && result && (
+          <WindDebugView 
+             result={result}
+             onClose={() => setShowWindDebug(false)}
           />
       )}
 
@@ -285,6 +295,14 @@ const App: React.FC = () => {
                <span className="hidden sm:inline hover:text-gray-300 transition-colors">React 19 + D3.js + Recharts</span>
           </div>
           <div className="flex gap-4 items-center">
+                <button 
+                    onClick={() => setShowWindDebug(true)}
+                    className="text-[10px] font-bold text-gray-400 hover:text-blue-400 hover:underline flex items-center gap-1.5 transition-colors"
+                >
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]"></span>
+                    風帯デバッグ
+                </button>
+                <span className="hidden sm:inline w-px h-3 bg-gray-800"></span>
                 <button 
                     onClick={() => setShowOceanDebug(true)}
                     className="text-[10px] font-bold text-gray-400 hover:text-red-400 hover:underline flex items-center gap-1.5 transition-colors"

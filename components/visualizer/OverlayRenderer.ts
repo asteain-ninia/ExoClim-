@@ -22,15 +22,65 @@ export const drawOverlays = (
     // Helper to normalize grid column index to [0, gridCols)
     const normalizeCol = (c: number) => ((c % gridCols) + gridCols) % gridCols;
 
+    // --- WIND BELTS OVERLAY ---
+    if (mode === 'wind_belts' && data.wind) {
+        const w = data.wind;
+        const m = displayMonth === 'annual' ? 0 : displayMonth;
+        const itcz = data.itczLines ? data.itczLines[m] : null;
+
+        // 1. Cell Boundaries (Horizontal lines)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1 * Math.sqrt(zoom);
+        ctx.setLineDash([5 * zoom, 5 * zoom]);
+        
+        const drawHLine = (lat: number) => {
+            const y = getY(lat) + offsetY;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        };
+
+        w.cellBoundariesDeg.forEach(b => {
+            if (b < 90) {
+                drawHLine(b);
+                drawHLine(-b);
+            }
+        });
+        drawHLine(0); // Equator
+        ctx.setLineDash([]);
+
+        // 2. Trade Wind Peaks (Curved lines following ITCZ)
+        if (itcz) {
+            const peakOffset = w.tradePeakOffsetDeg;
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+            ctx.lineWidth = 1.5 * Math.sqrt(zoom);
+            
+            const renderPeak = (offset: number, xOff: number) => {
+                ctx.beginPath();
+                for (let c = 0; c < gridCols; c++) {
+                    const x = getX(c) + xOff;
+                    const y = getY(Math.max(-90, Math.min(90, itcz[c] + offset))) + offsetY;
+                    if (c === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            };
+
+            let cx = startX;
+            while (cx < width) {
+                renderPeak(peakOffset, cx);
+                renderPeak(-peakOffset, cx);
+                cx += mapWidth;
+            }
+        }
+    }
+
     // --- COLLISION WALL CONTOUR ---
-    // Draw for Step 2.0 (ocean_collision) and 2.1 (oceanCurrent)
     if (mode === 'ocean_collision' || mode === 'oceanCurrent') {
         const threshold = 0;
         ctx.strokeStyle = mode === 'ocean_collision' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 0, 0, 0.6)';
         ctx.lineWidth = 1.0 * Math.sqrt(zoom);
         
-        // Simple contour: Scan horizontal and vertical edges
-        // Horizontal Edges
         ctx.beginPath();
         for (let r = 0; r < gridRows; r++) {
             for (let c = 0; c < gridCols; c++) {
@@ -40,13 +90,9 @@ export const drawOverlays = (
                 const rightVal = data.grid[rightIdx].collisionMask;
 
                 if ((val > threshold) !== (rightVal > threshold)) {
-                    // Interpolate position
                     const t = (threshold - val) / (rightVal - val);
                     const x = getX(c + t);
                     const y = getY(data.grid[idx].lat) + offsetY;
-
-                    // Draw a small vertical mark or start of line (simplified to segments for speed)
-                    // Just drawing small segments for now to represent the wall
                     ctx.moveTo(startX + x, y - 2);
                     ctx.lineTo(startX + x, y + 2);
                     if (startX + x + mapWidth < width) {
@@ -58,7 +104,6 @@ export const drawOverlays = (
         }
         ctx.stroke();
 
-        // Vertical Edges
         ctx.beginPath();
         for (let r = 0; r < gridRows - 1; r++) {
             for (let c = 0; c < gridCols; c++) {
@@ -70,11 +115,9 @@ export const drawOverlays = (
                 if ((val > threshold) !== (downVal > threshold)) {
                     const t = (threshold - val) / (downVal - val);
                     const x = getX(c);
-                    // Linear lat interp
                     const lat1 = data.grid[idx].lat;
                     const lat2 = data.grid[downIdx].lat;
                     const y = getY(lat1 + t * (lat2 - lat1)) + offsetY;
-
                     ctx.moveTo(startX + x - 2, y);
                     ctx.lineTo(startX + x + 2, y);
                      if (startX + x + mapWidth < width) {
@@ -189,23 +232,21 @@ export const drawOverlays = (
             const pts = line.points;
             if (pts.length < 2) return;
             
-            ctx.lineWidth = 2.0 * Math.sqrt(zoom); // Slightly thinner for cleaner look with improved density
+            ctx.lineWidth = 2.0 * Math.sqrt(zoom); 
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
             let distanceAccumulator = 0;
-            const arrowInterval = 80; // Widen arrow spacing
+            const arrowInterval = 80; 
             const itczRef = data.itczLines?.[m] || [];
 
             for(let i=1; i<pts.length; i++) {
                  const p0 = pts[i-1];
                  const p1 = pts[i];
                  
-                 // Normalize X coordinates to [0, gridCols) to handle wrap-around and negative drifts
                  const nx0 = normalizeCol(p0.x);
                  const nx1 = normalizeCol(p1.x);
 
-                 // Wrap-around check on grid coordinates
                  if (Math.abs(nx1 - nx0) > gridCols / 2) {
                      distanceAccumulator = 0;
                      continue;
@@ -270,12 +311,10 @@ export const drawOverlays = (
              while(cx < width) { drawStreamline(line, cx); cx += mapWidth; }
         }
 
-        // --- DRAW IMPACT POINTS ---
         if (data.impactPoints && data.impactPoints[m]) {
             const impacts = data.impactPoints[m];
             
             const drawImpactMarker = (im: any, xOff: number) => {
-                // Normalize X coordinate (use im.x if available, otherwise estimate from lon)
                 const rawX = im.x !== undefined ? im.x : (im.lon + 180) * (gridCols/360);
                 const normX = normalizeCol(rawX);
                 
@@ -284,7 +323,6 @@ export const drawOverlays = (
                 const size = 4 * Math.sqrt(zoom);
                 
                 if (im.type === 'ECC') {
-                    // ECC Impact (Red X) - Warm current hitting East coast
                     ctx.strokeStyle = '#ff4444';
                     ctx.lineWidth = 2 * Math.sqrt(zoom);
                     ctx.beginPath();
@@ -293,15 +331,11 @@ export const drawOverlays = (
                     ctx.moveTo(x + size, y - size);
                     ctx.lineTo(x - size, y + size);
                     ctx.stroke();
-                    
-                    // Glow
                     ctx.fillStyle = 'rgba(255, 50, 50, 0.4)';
                     ctx.beginPath();
                     ctx.arc(x, y, size * 1.5, 0, Math.PI * 2);
                     ctx.fill();
-
                 } else {
-                    // EC Impact (Cyan +) - Cold/Return current hitting West coast
                     ctx.strokeStyle = '#44ffff';
                     ctx.lineWidth = 2 * Math.sqrt(zoom);
                     ctx.beginPath();
@@ -310,8 +344,6 @@ export const drawOverlays = (
                     ctx.moveTo(x - size, y);
                     ctx.lineTo(x + size, y);
                     ctx.stroke();
-
-                     // Glow
                     ctx.fillStyle = 'rgba(50, 255, 255, 0.4)';
                     ctx.beginPath();
                     ctx.arc(x, y, size * 1.5, 0, Math.PI * 2);
