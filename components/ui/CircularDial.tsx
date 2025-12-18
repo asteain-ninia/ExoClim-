@@ -56,12 +56,12 @@ const CircularDial: React.FC<DialProps> = ({ label, value, onChange, unit, defau
 
     return (
         <div 
-            className="group bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded px-4 py-3 transition-all flex flex-col justify-between h-full"
+            className="group bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded px-4 py-3 transition-all flex flex-col h-full"
             title={defaultValue !== undefined ? `中クリックでリセット (${defaultValue}${unit || ''})` : ''}
         >
-             <div className="flex justify-between items-center w-full mb-2">
+             <div className="flex justify-between items-center w-full mb-4">
                 <span className="text-[11px] font-bold text-gray-400 group-hover:text-gray-300 tracking-wide">{label}</span>
-                <div className="flex items-center bg-gray-900 rounded px-1.5 py-0.5 border border-gray-700 group-hover:border-gray-500 transition-colors w-[4.5rem] justify-end">
+                <div className="flex items-center bg-gray-900 rounded px-1.5 py-0.5 border border-gray-700 group-hover:border-gray-500 transition-colors w-[5rem] justify-end">
                     <input 
                         type="number"
                         min={0}
@@ -78,25 +78,27 @@ const CircularDial: React.FC<DialProps> = ({ label, value, onChange, unit, defau
                 </div>
             </div>
             
-            <div className="relative w-28 h-28 self-center mt-2 select-none flex items-center justify-center">
-                <div 
-                    ref={containerRef}
-                    className="w-full h-full bg-gray-900 border border-gray-600 rounded-full cursor-crosshair relative shadow-inner flex items-center justify-center"
-                    onMouseDown={handleMouseDown}
-                >
-                    <div className="absolute w-full h-[1px] bg-gray-800"></div>
-                    <div className="absolute h-full w-[1px] bg-gray-800"></div>
-                    
-                    <div className="w-4 h-4 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.8)] z-10"></div>
-                    
-                    <div className="absolute w-[80%] h-[80%] border border-dashed border-gray-700 rounded-full pointer-events-none"></div>
-
+            <div className="flex-1 flex items-center justify-center min-h-0">
+                <div className="relative w-32 h-32 select-none flex items-center justify-center">
                     <div 
-                        className="absolute w-1/2 h-0.5 bg-transparent origin-left left-1/2 pointer-events-none"
-                        style={{ transform: `rotate(${value}deg)` }} 
+                        ref={containerRef}
+                        className="w-full h-full bg-gray-950 border border-gray-700 rounded-full cursor-crosshair relative shadow-inner flex items-center justify-center"
+                        onMouseDown={handleMouseDown}
                     >
-                         <div className="absolute right-1 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-blue-400 rounded-full shadow-md border border-white"></div>
-                         <div className="absolute right-1 top-1/2 transform -translate-y-1/2 w-10 h-[1px] bg-blue-500/50 -ml-10"></div>
+                        <div className="absolute w-full h-[1px] bg-gray-900"></div>
+                        <div className="absolute h-full w-[1px] bg-gray-900"></div>
+                        
+                        <div className="w-4 h-4 bg-yellow-500 rounded-full shadow-[0_0_12px_rgba(234,179,8,1)] z-10 border border-yellow-300"></div>
+                        
+                        <div className="absolute w-[80%] h-[80%] border border-dashed border-gray-800 rounded-full pointer-events-none"></div>
+
+                        <div 
+                            className="absolute w-1/2 h-0.5 bg-transparent origin-left left-1/2 pointer-events-none"
+                            style={{ transform: `rotate(${value}deg)` }} 
+                        >
+                             <div className="absolute right-1 top-1/2 transform -translate-y-1/2 w-2.5 h-2.5 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(96,165,250,0.8)] border border-white"></div>
+                             <div className="absolute right-1 top-1/2 transform -translate-y-1/2 w-12 h-[1px] bg-gradient-to-r from-blue-600/0 to-blue-500/80 -ml-12"></div>
+                        </div>
                     </div>
                 </div>
             </div>
