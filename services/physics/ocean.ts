@@ -238,8 +238,10 @@ export const computeOceanCurrents = (
     const DT = TOTAL_DT / SUB_STEPS;
     
     // Stagnation Config
-    const HISTORY_SIZE = 12; // Check position from ~12 frames ago
-    const STAGNATION_THRESHOLD = 0.3; // Distance in grid cells
+    // 旧 (12, 0.3) では世界一周する ECC が中々 stagnation 化されず Pruning で死ぬ
+    // ことが多かった。緩めて早期に impact 化されるよう調整。
+    const HISTORY_SIZE = 8;
+    const STAGNATION_THRESHOLD = 0.5;
     
     // Pruning Protection
     const PRUNE_PROTECTION_AGE = 50; // Agents younger than this won't be pruned
@@ -248,7 +250,10 @@ export const computeOceanCurrents = (
     
     let eccAgents: Agent[] = [];
     let nextAgentId = 0;
-    const gapFillInterval = Math.floor(cols / 64); 
+    // gapFillInterval は spawn インターバル(セル単位)。小さいほど spawn が密。
+    // 旧 cols/64 (= 5cell ごと、72個) では仮想大陸で ECC 起点が少なかった。
+    // cols/128 (= 2-3cell ごと、128個) に倍化して大陸沿岸を網羅させる。
+    const gapFillInterval = Math.max(1, Math.floor(cols / 128));
 
     for (let c = 0; c < cols; c++) {
       const itczLat = itcz[c];
@@ -351,7 +356,7 @@ export const computeOceanCurrents = (
                      // 仮想大陸では ECC の多くが pruning で死ぬため、ここで救出しないと
                      // 後段の海流が起動できない。
                      const { dist: pruneDist } = getEnvironment(agent.x, agent.y);
-                     if (pruneDist > -150) {
+                     if (pruneDist > -300) {
                          impactResults.push({ x: agent.x, y: agent.y, lat: getLatFromRow(agent.y), lon: getLonFromCol(agent.x), type: 'ECC' });
                          const safeSpawnX = findSafeSpawnX(agent.x, agent.y);
                          impactPointsTemp.push({ x: safeSpawnX, y: agent.y, lat: getLatFromRow(agent.y), lon: getLonFromCol(safeSpawnX) });
@@ -561,7 +566,7 @@ export const computeOceanCurrents = (
                      agent.active = false; agent.state = 'dead'; agent.cause = "Merged/Pruned";
                      // ECC と同様: 沿岸近くで pruning 死亡したら impact 化 (MLC 起点確保)
                      const { dist: pruneDist } = getEnvironment(agent.x, agent.y);
-                     if (pruneDist > -150) {
+                     if (pruneDist > -300) {
                          impactResults.push({ x: agent.x, y: agent.y, lat: getLatFromRow(agent.y), lon: getLonFromCol(agent.x), type: 'EC' });
                      }
                  }
