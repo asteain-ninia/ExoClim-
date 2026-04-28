@@ -341,12 +341,21 @@ export const computeOceanCurrents = (
 
             if (agent.active && agentPoints[agent.id].length > 5) {
                  // ** Pruning Protection **
-                 // Only prune if agent is old enough. 
+                 // Only prune if agent is old enough.
                  // Always call updateAndCheckPruning to populate grid, but ignore result if young.
                  const shouldPrune = updateAndCheckPruning(agent.x, agent.y, agent.vx, agent.vy);
-                 
+
                  if (shouldPrune && agent.age > PRUNE_PROTECTION_AGE) {
                      agent.active = false; agent.state = 'dead'; agent.cause = "Merged/Pruned";
+                     // 沿岸近くで pruning 死亡したら impact 化 (EC spawn の起点を確保)
+                     // 仮想大陸では ECC の多くが pruning で死ぬため、ここで救出しないと
+                     // 後段の海流が起動できない。
+                     const { dist: pruneDist } = getEnvironment(agent.x, agent.y);
+                     if (pruneDist > -150) {
+                         impactResults.push({ x: agent.x, y: agent.y, lat: getLatFromRow(agent.y), lon: getLonFromCol(agent.x), type: 'ECC' });
+                         const safeSpawnX = findSafeSpawnX(agent.x, agent.y);
+                         impactPointsTemp.push({ x: safeSpawnX, y: agent.y, lat: getLatFromRow(agent.y), lon: getLonFromCol(safeSpawnX) });
+                     }
                  }
             }
 
@@ -547,9 +556,14 @@ export const computeOceanCurrents = (
             if (agentPoints[agent.id] && agentPoints[agent.id].length > 5 && !isDebugRun) {
                  // ** Pruning Protection **
                  const shouldPrune = updateAndCheckPruning(agent.x, agent.y, agent.vx, agent.vy);
-                 
+
                  if (shouldPrune && agent.age > PRUNE_PROTECTION_AGE) {
                      agent.active = false; agent.state = 'dead'; agent.cause = "Merged/Pruned";
+                     // ECC と同様: 沿岸近くで pruning 死亡したら impact 化 (MLC 起点確保)
+                     const { dist: pruneDist } = getEnvironment(agent.x, agent.y);
+                     if (pruneDist > -150) {
+                         impactResults.push({ x: agent.x, y: agent.y, lat: getLatFromRow(agent.y), lon: getLonFromCol(agent.x), type: 'EC' });
+                     }
                  }
             }
 
