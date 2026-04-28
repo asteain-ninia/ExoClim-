@@ -679,12 +679,9 @@ export const computeOceanCurrents = (
                         const isArrival = (nvx < -0.1 && nx < -0.2); 
 
                         if (isArrival) {
-                            // EC impact は MLC の起点。
-                            // 旧: 20% 確率でしか push せず MLC が起動しないことが多かった。
-                            // 新: 確率を 60% に引き上げ (一定の間引きで OceanDebug の見やすさは保つ)。
-                            if (random() < 0.6) {
-                                impactResults.push({ x: nextX, y: nextY, lat: getLatFromRow(nextY), lon: getLonFromCol(nextX), type: 'EC' });
-                            }
+                            // EC impact は MLC の起点。間引きせず全部 push して
+                            // 大陸沿岸を MLC で網羅する。
+                            impactResults.push({ x: nextX, y: nextY, lat: getLatFromRow(nextY), lon: getLonFromCol(nextX), type: 'EC' });
                             agent.active = false; agent.state = 'dead'; agent.cause = "Arrival (West Coast)";
                             
                             if (agent.age < 20) {
@@ -794,7 +791,8 @@ export const computeOceanCurrents = (
             }];
         }
 
-        const PASS_MAX_STEPS = BASE_MAX_STEPS;
+        // ジャイア海流は赤道流より長い距離を走るので step 数を多めに
+        const PASS_MAX_STEPS = Math.floor(BASE_MAX_STEPS * 1.6);
         const startStepPhase = debugFrames.length;
         const passNewImpacts: OceanImpact[] = [];
 
@@ -843,9 +841,12 @@ export const computeOceanCurrents = (
                         const lateralTarget = inOwnCell
                             ? sweepDir * phys.oceanBaseSpeed * 1.0
                             : -sweepDir * phys.oceanBaseSpeed * 0.4; // 起動時 (前cell内): 逆方向
+                        // 自cellに入ったら極方向力は弱める (lateralが支配的に=大洋横断を促す)
+                        // 旧: 0.3 → 横断前に highBound に達して止まる頻度が高かった
+                        // 新: 0.1 で東進(or西進)を支配的にして対岸まで到達できるよう調整
                         const polewardTarget = (agent.type === 'MLC_N' ? -1 : 1)
                             * phys.oceanBaseSpeed
-                            * (inOwnCell ? 0.3 : 0.7);
+                            * (inOwnCell ? 0.1 : 0.7);
 
                         const { dist: currentDist, gx: currentGx, gy: currentGy } = getEnvironment(agent.x, agent.y);
                         const isNearCoast = currentDist > -60;
