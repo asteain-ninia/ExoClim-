@@ -968,6 +968,7 @@ export const computeOceanCurrents = (
         }
 
         // Save streamlines for this pass
+        let passSavedLines = 0;
         for (const agent of passAgents) {
             if (passPoints[agent.id] && passPoints[agent.id].length > 5) {
                 finishedLines.push({
@@ -975,8 +976,10 @@ export const computeOceanCurrents = (
                     strength: agent.strength,
                     type: agent.type === 'MLC_N' ? 'mlc_n' : 'mlc_s'
                 });
+                passSavedLines++;
             }
         }
+        console.log(`  [Pass cell${cellIdx} ${eastward ? 'E' : 'W'} ${lowBound.toFixed(1)}-${highBound.toFixed(1)}°] spawned=${passAgents.length}, lines=${passSavedLines}, newImpacts=${passNewImpacts.length}`);
 
         // 次 Pass の起点
         prevImpactsForGyre = passNewImpacts;
