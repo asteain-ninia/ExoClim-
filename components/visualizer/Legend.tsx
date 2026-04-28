@@ -127,6 +127,52 @@ const Legend: React.FC<{ mode: string }> = ({ mode }) => {
                     </div>
                 </div>
             );
+        case 'climate':
+            return (
+                <div className={containerClass}>
+                    <h4 className={titleClass}>ケッペン気候区分</h4>
+                    <div className="grid grid-cols-1 gap-1 text-[10px]">
+                        <div className="font-bold text-blue-300 mt-1">A: 熱帯</div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#0000FF' }}></div><span>Af 熱帯雨林</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#0077FF' }}></div><span>Am モンスーン</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#44AAFF' }}></div><span>Aw/As サバナ</span></div>
+
+                        <div className="font-bold text-red-300 mt-2">B: 乾燥</div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#FF0000' }}></div><span>BWh 砂漠 (高温)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#FF99AA' }}></div><span>BWk 砂漠 (寒冷)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#FFAA00' }}></div><span>BSh ステップ (高温)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#FFDD66' }}></div><span>BSk ステップ (寒冷)</span></div>
+
+                        <div className="font-bold text-yellow-200 mt-2">C: 温帯</div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#00FF00' }}></div><span>Cfa/b 温暖湿潤・西岸海洋性</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#FFFF00' }}></div><span>Cs 地中海性</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#AAFF00' }}></div><span>Cw 温帯冬季少雨</span></div>
+
+                        <div className="font-bold text-purple-300 mt-2">D: 冷帯</div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#00AAAA' }}></div><span>Df 亜寒帯湿潤</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#FF00FF' }}></div><span>Ds/Dw 冷帯季節乾燥</span></div>
+
+                        <div className="font-bold text-gray-300 mt-2">E: 寒帯</div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#B2B2B2' }}></div><span>ET ツンドラ</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4" style={{ background: '#FFFFFF', border: '1px solid #888' }}></div><span>EF 氷雪</span></div>
+
+                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-700"><div className="w-4 h-4" style={{ background: '#000066' }}></div><span>Oc 海洋</span></div>
+                    </div>
+                </div>
+            );
+        case 'insolation':
+            return (
+                <div className={containerClass}>
+                    <h4 className={titleClass}>大気上端日射量 (TOA)</h4>
+                    <div className="h-4 w-full rounded-sm mb-1 border border-gray-700"
+                        style={{ background: 'linear-gradient(to right, #000033, #003366, #66aaff, #ffeb99, #ff9933, #ffffff)' }}
+                    ></div>
+                    <div className={`flex justify-between text-[10px] font-mono ${labelClass}`}>
+                        <span>0 W/m²</span><span>~500 W/m²</span>
+                    </div>
+                    <p className="text-[9px] text-gray-400 mt-2 leading-tight">軌道幾何（離心率・地軸傾斜・近日点引数・主星光度）から算出した日平均値。</p>
+                </div>
+            );
         case 'distCoast':
             return (
                 <div className={containerClass}>

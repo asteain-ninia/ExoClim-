@@ -145,6 +145,12 @@ const App: React.FC = () => {
           { id: 'oceanCurrent', label: '3.1 循環流' }
       ]},
       { id: 'step4', label: 'Step 4', desc: '気流詳細', subSteps: [] },
+      { id: 'temp', label: 'Step 5', desc: '気温', subSteps: [
+          { id: 'insolation', label: '5.1 日射量' },
+          { id: 'tempZonal', label: '5.2 帯状平均' },
+      ]},
+      { id: 'precip', label: 'Step 6', desc: '降水', subSteps: [] },
+      { id: 'climate', label: 'Step 7', desc: '気候区分', subSteps: [] },
   ];
 
   return (
