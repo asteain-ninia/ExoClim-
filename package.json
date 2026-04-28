@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "render": "tsx scripts/render_climate.ts"
+    "render": "tsx scripts/render_climate.ts",
+    "extract:reference": "tsx scripts/extract_reference.ts",
+    "build:reference": "tsx scripts/build_reference.ts"
   },
   "dependencies": {
     "d3": "^7.9.0",
@@ -20,6 +22,7 @@
     "@types/node": "^22.14.0",
     "@types/pngjs": "^6.0.5",
     "@vitejs/plugin-react": "^5.0.0",
+    "jpeg-js": "^0.4.4",
     "pngjs": "^7.0.0",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
