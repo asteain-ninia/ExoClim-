@@ -305,10 +305,13 @@ export const drawOverlays = (
                  const isMLC = line.type === 'mlc_n' || line.type === 'mlc_s';
                  let r=0, g=0, b=0;
                  if (isMLC) {
-                     // 中緯度海流: 暖流ぽいオレンジ系
-                     r = Math.floor(255 * intensity);
-                     g = Math.floor(140 * intensity);
-                     b = Math.floor(40 * intensity);
+                     // 中緯度海流: 速度ベースで明度変動するが最低 0.4 を保証 (黒つぶれ防止)
+                     const speed = Math.sqrt((p1.vx||0)**2 + (p1.vy||0)**2);
+                     const baseSpeedRef = Math.max(0.1, (physicsParams as any)?.oceanBaseSpeed || 1.0);
+                     const mlcIntensity = Math.max(0.4, Math.min(1.0, speed / baseSpeedRef));
+                     r = Math.floor(255 * mlcIntensity);
+                     g = Math.floor(140 * mlcIntensity);
+                     b = Math.floor(40 * mlcIntensity);
                  } else if (isLeaving) {
                      r = Math.floor(255 * intensity);
                      g = Math.floor(20 * intensity);

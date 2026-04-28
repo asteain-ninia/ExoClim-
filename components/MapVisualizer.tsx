@@ -1,9 +1,13 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { SimulationResult, PhysicsParams } from '../types';
 import { drawPixels } from './visualizer/PixelRenderer';
 import { drawOverlays } from './visualizer/OverlayRenderer';
 import Legend from './visualizer/Legend';
+
+// Map 描画専用の月別フォールバック (Chart は別ロジック)
+const MAP_ANNUAL_ONLY = new Set(['elevation', 'distCoast', 'itcz_heatmap', 'ocean_collision', 'climate']);
+const MAP_NO_ANNUAL = new Set(['oceanCurrent']);
 
 interface Props {
   data: SimulationResult | null;
@@ -26,13 +30,20 @@ const MapVisualizer: React.FC<Props> = ({ data, mode, width, height, displayMont
   const lastX = useRef(0);
   const lastY = useRef(0);
   const [isGradient, setIsGradient] = useState(false);
-  
-  // Helper to extract value based on displayMonth
+
+  // 表示モードによっては選択された月を自動でフォールバック (Chart は影響しない)
+  const effectiveMonth: 'annual' | 0 | 6 = useMemo(() => {
+      if (MAP_ANNUAL_ONLY.has(mode)) return 'annual';
+      if (MAP_NO_ANNUAL.has(mode) && displayMonth === 'annual') return 0;
+      return displayMonth;
+  }, [mode, displayMonth]);
+
+  // Helper to extract value based on effectiveMonth
   const getVal = (arr: number[]) => {
-      if (displayMonth === 'annual') {
+      if (effectiveMonth === 'annual') {
           return arr.reduce((a, b) => a + b, 0) / 12;
       }
-      return arr[displayMonth];
+      return arr[effectiveMonth];
   };
 
   const modeLabels: Record<string, string> = {
@@ -75,9 +86,9 @@ const MapVisualizer: React.FC<Props> = ({ data, mode, width, height, displayMont
     const ctx = buffer.getContext('2d');
     if (!ctx) return;
 
-    drawPixels(ctx, data, mode, displayMonth, gridCols, gridRows, isGradient);
-    
-  }, [data, mode, isGradient, displayMonth]);
+    drawPixels(ctx, data, mode, effectiveMonth, gridCols, gridRows, isGradient);
+
+  }, [data, mode, isGradient, effectiveMonth]);
 
   // --- Animation Loop ---
   useEffect(() => {
@@ -113,7 +124,7 @@ const MapVisualizer: React.FC<Props> = ({ data, mode, width, height, displayMont
 
         drawOverlays(
             ctx, data, mode, width, height, zoom, offsetY, 
-            startX, mapWidth, gridCols, gridRows, displayMonth, physicsParams
+            startX, mapWidth, gridCols, gridRows, effectiveMonth, physicsParams
         );
 
         animationFrameId = requestAnimationFrame(draw);
@@ -121,7 +132,7 @@ const MapVisualizer: React.FC<Props> = ({ data, mode, width, height, displayMont
 
     draw();
     return () => cancelAnimationFrame(animationFrameId);
-  }, [data, mode, width, height, offsetX, offsetY, isGradient, displayMonth, physicsParams, zoom]);
+  }, [data, mode, width, height, offsetX, offsetY, isGradient, effectiveMonth, physicsParams, zoom]);
 
   // --- Interaction ---
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -196,10 +207,10 @@ const MapVisualizer: React.FC<Props> = ({ data, mode, width, height, displayMont
       const meanTemp = (getVal(cell.temp) - 273.15).toFixed(1);
       let precipVal = 0;
       let precipLabel = "年降水";
-      if (displayMonth === 'annual') {
+      if (effectiveMonth === 'annual') {
           precipVal = cell.precip.reduce((a, b) => a + b, 0);
       } else {
-          precipVal = cell.precip[displayMonth];
+          precipVal = cell.precip[effectiveMonth];
           precipLabel = "月降水";
       }
       
@@ -300,7 +311,7 @@ const MapVisualizer: React.FC<Props> = ({ data, mode, width, height, displayMont
         <span className="tracking-wider text-sm">{modeLabels[mode] || mode}</span>
         {mode !== 'climate' && mode !== 'distCoast' && mode !== 'elevation' && mode !== 'itcz_heatmap' && mode !== 'ocean_collision' && (
              <span className="ml-2 px-1.5 py-0.5 bg-gray-700 rounded text-[10px] text-gray-300">
-                 {displayMonth === 'annual' ? '年平均' : (displayMonth === 0 ? '1月' : '7月')}
+                 {effectiveMonth === 'annual' ? '年平均' : (effectiveMonth === 0 ? '1月' : '7月')}
              </span>
         )}
       </div>

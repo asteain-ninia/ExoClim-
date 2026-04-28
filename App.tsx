@@ -75,17 +75,10 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    if (ANNUAL_ONLY_MODES.has(viewMode)) {
-        setDisplayMonth('annual');
-        return;
-    }
-    if (NO_ANNUAL_MODES.has(viewMode)) {
-        // 年平均は計算不能なので 1月にフォールバック。
-        // 既に 1月/7月 を選んでいる場合は尊重する。
-        setDisplayMonth(prev => (prev === 'annual' ? 0 : prev));
-    }
-  }, [viewMode]);
+  // displayMonth はユーザー選択値として保持し、強制リセットしない。
+  // Map と Chart の整合は各コンポーネント側で吸収する。
+  // (MapVisualizer は mode と displayMonth から effective month を決め、
+  //  Charts は displayMonth をそのまま使う)
 
   const handleRun = useCallback(async (overrideConfig?: Partial<SimulationConfig>) => {
     setIsRunning(true);

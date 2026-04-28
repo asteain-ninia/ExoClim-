@@ -679,7 +679,10 @@ export const computeOceanCurrents = (
                         const isArrival = (nvx < -0.1 && nx < -0.2); 
 
                         if (isArrival) {
-                            if (random() < 0.2) { 
+                            // EC impact は MLC の起点。
+                            // 旧: 20% 確率でしか push せず MLC が起動しないことが多かった。
+                            // 新: 確率を 60% に引き上げ (一定の間引きで OceanDebug の見やすさは保つ)。
+                            if (random() < 0.6) {
                                 impactResults.push({ x: nextX, y: nextY, lat: getLatFromRow(nextY), lon: getLonFromCol(nextX), type: 'EC' });
                             }
                             agent.active = false; agent.state = 'dead'; agent.cause = "Arrival (West Coast)";
@@ -928,6 +931,15 @@ export const computeOceanCurrents = (
             itczLine: itcz
         };
     }
+
+    // Debug counts
+    const eccLines = finishedLines.filter(l => l.type === 'main').length;
+    const ecLines = finishedLines.filter(l => l.type === 'split_n' || l.type === 'split_s').length;
+    const mlcLines = finishedLines.filter(l => l.type === 'mlc_n' || l.type === 'mlc_s').length;
+    const eccImp = impactResults.filter(i => i.type === 'ECC').length;
+    const ecImp = impactResults.filter(i => i.type === 'EC').length;
+    const mlcImp = impactResults.filter(i => i.type === 'MLC').length;
+    console.log(`[Ocean][m=${m}] streamlines: ECC=${eccLines}, EC=${ecLines}, MLC=${mlcLines}; impacts: ECC=${eccImp}, EC=${ecImp}, MLC=${mlcImp}`);
 
     streamlinesByMonth[m] = finishedLines;
     impactsByMonth[m] = impactResults;
