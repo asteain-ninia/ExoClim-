@@ -90,7 +90,7 @@ export interface PhysicsParams {
   oceanSmoothing: number; // Iterations. Smoothing steps for collision map.
 
   // 3.3 Advanced Flow Tuning
-  oceanSpawnSpeedMultiplier: number; // Multiplier for initial spawn speed (relative to baseSpeed)
+  oceanSpawnSpeedMultiplier: number; // Multiplier for initial EC split speed (relative to oceanEcPolewardDrift)
   oceanCrawlSpeedMultiplier: number; // Multiplier for crawling speed along coast
   oceanMaxSpeedMultiplier: number; // Cap for absolute speed
   oceanInertiaX: number; // 0.0 - 1.0. How fast X velocity reacts to target speed

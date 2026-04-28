@@ -498,17 +498,18 @@ export const computeOceanCurrents = (
     
     let ecAgents: Agent[] = [];
     
+    // EC split speed is configured by poleward drift and scaled by spawn multiplier.
+    const ecSplitSpeed = Math.max(0, phys.oceanEcPolewardDrift) * Math.max(0, phys.oceanSpawnSpeedMultiplier);
+
     for (const ip of impactPointsTemp) {
-        // Use Param
-        const spawnSpeed = phys.oceanBaseSpeed * phys.oceanSpawnSpeedMultiplier;
         ecAgents.push({
             id: nextAgentId++, active: true, x: ip.x, y: ip.y,
-            vx: 0, vy: -spawnSpeed, strength: 2.0, type: 'EC_N',
+            vx: 0, vy: -ecSplitSpeed, strength: 2.0, type: 'EC_N',
             state: 'active', age: 0, history: []
         });
         ecAgents.push({
             id: nextAgentId++, active: true, x: ip.x, y: ip.y,
-            vx: 0, vy: spawnSpeed, strength: 2.0, type: 'EC_S',
+            vx: 0, vy: ecSplitSpeed, strength: 2.0, type: 'EC_S',
             state: 'active', age: 0, history: []
         });
     }
@@ -653,6 +654,13 @@ export const computeOceanCurrents = (
                                 ay -= ny * repulseStrength;
                             }
                         }
+                    }
+
+                    // Preserve split drift briefly so oceanEcPolewardDrift remains observable.
+                    const splitPhase = Math.max(0, 1 - agent.age / 24);
+                    if (splitPhase > 0 && ecSplitSpeed > 0) {
+                        const polewardVyTarget = agent.type === 'EC_N' ? -ecSplitSpeed : ecSplitSpeed;
+                        ay += (polewardVyTarget - agent.vy) * (0.12 * splitPhase);
                     }
 
                     let nvx = agent.vx + ax;
