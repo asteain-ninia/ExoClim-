@@ -99,8 +99,11 @@ export const RESOLUTION_PRESETS = [
 
 export const DEFAULT_CONFIG: SimulationConfig = {
   resolutionLat: 180, // Default to Medium for performance
-  resolutionLon: 360, 
-  startingMap: 'PROCEDURAL',
+  resolutionLon: 360,
+  // 一時: デバッグ目的でデフォルトを仮想大陸に変更。
+  // 仮想大陸 (中央集中の単一大陸) はネット上の Worldbuilding Pasta 流の
+  // お手本マップと比較しやすいため。完成後は 'PROCEDURAL' に戻して可。
+  startingMap: 'VIRTUAL_CONTINENT',
   seed: 42,
   zoom: 1.0
 };

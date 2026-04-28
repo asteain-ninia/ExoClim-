@@ -434,8 +434,9 @@ export const computeOceanCurrents = (
                         const ny = gradLen > 0 ? newGy / gradLen : 0;
                         
                         // Impact Detection: Moving East (+vx) into East-facing wall (+nx)
-                        // Use same strictness as EC but mirrored
-                        const isImpact = (nvx > 0.1 && nx > 0.2); 
+                        // 旧 (0.1, 0.2) では仮想大陸で impact 検出されにくい問題があった
+                        // 緩めて斜め接岸でも impact を捉えるようにする
+                        const isImpact = (nvx > 0.05 && nx > 0.1);
 
                         if (isImpact) {
                             // Register Impact
@@ -676,7 +677,8 @@ export const computeOceanCurrents = (
                         const nx = gradLen > 0 ? newGx / gradLen : 0;
                         const ny = gradLen > 0 ? newGy / gradLen : 0;
                         
-                        const isArrival = (nvx < -0.1 && nx < -0.2); 
+                        // 同様に EC arrival も緩める (大陸東岸への斜め接岸を捉える)
+                        const isArrival = (nvx < -0.05 && nx < -0.1);
 
                         if (isArrival) {
                             // EC impact は MLC の起点。間引きせず全部 push して
