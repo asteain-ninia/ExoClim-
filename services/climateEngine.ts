@@ -75,7 +75,7 @@ export const runSimulation = async (
 
   // --- Step 6: Hydrology ---
   onProgress(90, "Step 6: Hydrology...", 'step4');
-  computeHydrology(grid, circulationRes.itczLines, windRes, planet, atm, config);
+  computeHydrology(grid, circulationRes.itczLines, windRes, oceanRes.streamlines, planet, atm, config);
   await new Promise(r => setTimeout(r, 30));
 
   // --- Step 7: Köppen Classification ---
