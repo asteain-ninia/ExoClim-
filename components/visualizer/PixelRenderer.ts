@@ -75,19 +75,20 @@ export const drawPixels = (
              [r,g,b] = d3ColorToRgb(d3.interpolateRdBu(norm));
 
         } else if (mode === 'step4') {
-            // Placeholder pattern to avoid a black screen for an unimplemented Step 4.
-            if (cell.isLand) {
-                r = 60; g = 64; b = 72;
-            } else {
-                r = 24; g = 38; b = 68;
-            }
-            const row = Math.floor(i / gridCols);
-            const col = i % gridCols;
-            if (((row + col) % 10) < 2) {
-                r = Math.min(255, r + 18);
-                g = Math.min(255, g + 18);
-                b = Math.min(255, b + 18);
-            }
+            // 圧力場 + 地衡風: 高気圧=赤, 低気圧=青, 風速で明るさ
+            const meanP = getVal(cell.pressure);
+            // 1013 ± 25 hPa を [0..1] に正規化 (1 = 高気圧)
+            const norm = Math.max(0, Math.min(1, (meanP - 988) / 50));
+            // d3.interpolateRdBu は 0=red, 1=blue。高気圧=赤にしたいので 1-norm を渡す
+            [r, g, b] = d3ColorToRgb(d3.interpolateRdBu(1 - norm));
+            // 風速で明るさを上乗せ
+            const meanU = getVal(cell.windU);
+            const meanV = getVal(cell.windV);
+            const speed = Math.sqrt(meanU * meanU + meanV * meanV);
+            const speedFactor = Math.min(1, speed / 15);
+            r = Math.min(255, r + speedFactor * 25);
+            g = Math.min(255, g + speedFactor * 25);
+            b = Math.min(255, b + speedFactor * 25);
 
         } else if (mode === 'elevation' || mode === 'itcz_result' || mode === 'oceanCurrent') {
             if (!cell.isLand) {

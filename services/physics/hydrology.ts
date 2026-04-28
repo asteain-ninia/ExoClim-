@@ -26,9 +26,17 @@ const buildCurrentMaps = (
     const warm = new Uint8Array(N * monthCount);
     const cold = new Uint8Array(N * monthCount);
 
+    // ocean.ts は通常 [Jan-output, Jul-output] の 2 要素配列を返す
+    // (targetMonths=[0,6] に対応する 2 要素を順に push しているだけ)
+    // よって配列添字は [0]=1月, [1]=7月。月→添字のフォールバックを正しく設定する。
+    const monthToSourceIdx = (m: number): number => {
+        if (oceanStreamlines.length >= 12 && oceanStreamlines[m]) return m;
+        // 2要素（[0]=Jan, [1]=Jul）の場合は最寄りを採用
+        return m < 3 || m > 9 ? 0 : 1;
+    };
+
     for (let m = 0; m < monthCount; m++) {
-        // oceanStreamlines は [0=Jan, 6=Jul] の2要素しかない場合がある
-        const sourceIdx = oceanStreamlines[m] ? m : (m < 6 ? 0 : 6);
+        const sourceIdx = monthToSourceIdx(m);
         const lines = oceanStreamlines[sourceIdx] || [];
 
         for (const line of lines) {

@@ -11,7 +11,7 @@ import { initializeGrid } from './services/geography';
 import { exportAllData } from './services/exporter';
 import { PlanetParams, AtmosphereParams, SimulationResult, SimulationConfig, PhysicsParams } from './types';
 
-const ANNUAL_ONLY_MODES = new Set(['elevation', 'distCoast', 'itcz_heatmap', 'ocean_collision', 'climate', 'step4']);
+const ANNUAL_ONLY_MODES = new Set(['elevation', 'distCoast', 'itcz_heatmap', 'ocean_collision', 'climate']);
 const NO_ANNUAL_MODES = new Set(['oceanCurrent']);
 
 const App: React.FC = () => {
@@ -81,7 +81,9 @@ const App: React.FC = () => {
         return;
     }
     if (NO_ANNUAL_MODES.has(viewMode)) {
-        setDisplayMonth(0);
+        // 年平均は計算不能なので 1月にフォールバック。
+        // 既に 1月/7月 を選んでいる場合は尊重する。
+        setDisplayMonth(prev => (prev === 'annual' ? 0 : prev));
     }
   }, [viewMode]);
 

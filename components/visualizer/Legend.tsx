@@ -201,9 +201,16 @@ const Legend: React.FC<{ mode: string }> = ({ mode }) => {
         case 'step4':
             return (
                 <div className={containerClass}>
-                    <h4 className={titleClass}>Step 4: 気流詳細</h4>
-                    <p className="text-[10px] text-amber-200 leading-relaxed">
-                        このステップは未実装です。表示はプレースホルダで、物理結果は含みません。
+                    <h4 className={titleClass}>Step 4: 気圧場 + 地衡風</h4>
+                    <div className="h-4 w-full rounded-sm mb-1 border border-gray-700"
+                        style={{ background: 'linear-gradient(to right, #2166ac, #f7f7f7, #b2182b)' }}
+                    ></div>
+                    <div className={`flex justify-between text-[10px] font-mono ${labelClass}`}>
+                        <span>低圧 (青)</span><span>1013hPa</span><span>高圧 (赤)</span>
+                    </div>
+                    <p className="text-[9px] text-gray-400 mt-2 leading-tight">
+                        色は気圧 anomaly、明るさは合成風速。陸海の温度差から内陸冷域に高気圧、
+                        亜熱帯ジャイア中心に高気圧が配置され、地衡風として風帯に上乗せされる。
                     </p>
                 </div>
             );
