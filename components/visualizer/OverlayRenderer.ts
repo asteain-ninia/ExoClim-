@@ -302,14 +302,20 @@ export const drawOverlays = (
                  const rawIntensity = Math.min(1.0, Math.abs(vy) / maxVy);
                  const intensity = Math.pow(rawIntensity, 2); 
 
+                 const isMLC = line.type === 'mlc_n' || line.type === 'mlc_s';
                  let r=0, g=0, b=0;
-                 if (isLeaving) {
+                 if (isMLC) {
+                     // 中緯度海流: 暖流ぽいオレンジ系
                      r = Math.floor(255 * intensity);
-                     g = Math.floor(20 * intensity); 
+                     g = Math.floor(140 * intensity);
+                     b = Math.floor(40 * intensity);
+                 } else if (isLeaving) {
+                     r = Math.floor(255 * intensity);
+                     g = Math.floor(20 * intensity);
                      b = Math.floor(20 * intensity);
                  } else {
                      r = Math.floor(20 * intensity);
-                     g = Math.floor(140 * intensity); 
+                     g = Math.floor(140 * intensity);
                      b = Math.floor(255 * intensity);
                  }
                  const colorStr = `rgb(${r}, ${g}, ${b})`;

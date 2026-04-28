@@ -156,7 +156,12 @@ export interface StreamlinePoint {
 
 export interface OceanStreamline {
   points: StreamlinePoint[];
-  type: 'main' | 'split_n' | 'split_s';
+  // 'main'    = Pass1 ECC (赤道反流)
+  // 'split_n' = Pass2 EC 北分裂 (赤道流北分岐)
+  // 'split_s' = Pass2 EC 南分裂 (赤道流南分岐)
+  // 'mlc_n'   = Pass3 中緯度海流 北 (Mid-Latitude Current N)
+  // 'mlc_s'   = Pass3 中緯度海流 南
+  type: 'main' | 'split_n' | 'split_s' | 'mlc_n' | 'mlc_s';
   strength: number; // 0.0 - 1.0 (For thickness/opacity)
 }
 
@@ -165,7 +170,10 @@ export interface OceanImpact {
   y: number;
   lat: number;
   lon: number;
-  type: 'ECC' | 'EC'; // ECC = Pass 1 (Warm/Eastward), EC = Pass 2 (Cold/Westward)
+  // 'ECC' = Pass1 終端 (大陸東岸 = ECからのspawn起点)
+  // 'EC'  = Pass2 終端 (大陸西岸 = MLCからのspawn起点)
+  // 'MLC' = Pass3 終端 (大陸西岸の中緯度寄り)
+  type: 'ECC' | 'EC' | 'MLC';
 }
 
 export interface OceanDiagnosticLog {
@@ -195,7 +203,7 @@ export interface WindBeltsResult {
 // --- DEBUGGING TYPES ---
 export interface DebugAgentSnapshot {
     id: number;
-    type: 'ECC' | 'EC_N' | 'EC_S';
+    type: 'ECC' | 'EC_N' | 'EC_S' | 'MLC_N' | 'MLC_S';
     x: number;
     y: number;
     vx: number;

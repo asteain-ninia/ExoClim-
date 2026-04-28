@@ -59,7 +59,7 @@ const OceanDebugView: React.FC<Props> = ({ grid, itczLines, config, phys, effect
         
         const timer = setTimeout(() => {
             // Unit J: Re-calculate using active (effective) physics to match simulation result
-            const result = computeOceanCurrents(grid, itczLines, activePhys, config, planet, targetMonth);
+            const result = computeOceanCurrents(grid, itczLines, activePhys, config, planet, windCellBoundaries, targetMonth);
             if (result.debugData) {
                 setDebugData(result.debugData);
                 setCurrentStep(0);

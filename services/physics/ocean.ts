@@ -11,7 +11,7 @@ interface Agent {
   vx: number;
   vy: number;
   strength: number;
-  type: 'ECC' | 'EC_N' | 'EC_S';
+  type: 'ECC' | 'EC_N' | 'EC_S' | 'MLC_N' | 'MLC_S';
   
   // Lifecycle / Debug State
   state: 'active' | 'dead' | 'stuck' | 'impact' | 'crawling';
@@ -46,6 +46,7 @@ export const computeOceanCurrents = (
   phys: PhysicsParams,
   config: SimulationConfig,
   planet: PlanetParams,
+  cellBoundariesDeg: number[] = [30, 60, 90], // Pass 3 (MLC) で使うセル境界。default は地球型
   debugMonth?: number // Optional: If provided, generates DebugSimulationData for this month
 ): { streamlines: OceanStreamline[][], impacts: OceanImpact[][], diagnostics: OceanDiagnosticLog[], debugData?: DebugSimulationData } => {
   const streamlinesByMonth: OceanStreamline[][] = [];
@@ -742,6 +743,179 @@ export const computeOceanCurrents = (
     for(const agent of ecAgents) {
         if (ecPoints[agent.id] && ecPoints[agent.id].length > 5) {
             finishedLines.push({ points: ecPoints[agent.id], strength: agent.strength, type: agent.type === 'EC_N' ? 'split_n' : 'split_s' });
+        }
+    }
+
+    // ================= PASS 3: Mid-Latitude Current (MLC) =================
+    // EC impact 位置を起点とする中緯度海流。
+    // 仕様(指示文より):
+    //   - EC 衝突点(大陸西岸) から spawn
+    //   - ITCZ より北/南で MLC_N / MLC_S を分ける
+    //   - 起動直後は弱い西向き + 強い極方向 (沿岸這行で北上/南下)
+    //   - Hadley/Ferrel 境界 (cellBoundariesDeg[0]) を超えると西向き力消失、東向き力に転回
+    //   - 大陸 (主に西岸) に衝突するか、Ferrel/Polar 境界に達すると停止 (impact type='MLC')
+    const ecImpactsForMLC = impactResults.filter(i => i.type === 'EC');
+    const hadleyEdge = cellBoundariesDeg[0] || 30;
+    const ferrelEdge = cellBoundariesDeg[1] || (cellBoundariesDeg[0] || 30) + 30;
+
+    const mlcAgents: Agent[] = [];
+    for (const ip of ecImpactsForMLC) {
+        const lonIdx = Math.floor(((ip.x % cols) + cols) % cols);
+        const itczLat = itcz[lonIdx];
+        const isNorth = ip.lat > itczLat;
+        // EC は impact ですでに大陸西岸に到達しているので、少し沖側 (東) にオフセット
+        // して spawn (沿岸這行のスタート位置)
+        const safeStartX = ip.x + 1.0;
+        mlcAgents.push({
+            id: nextAgentId++, active: true,
+            x: safeStartX, y: ip.y,
+            vx: -phys.oceanBaseSpeed * 0.4,                                  // 弱い西向き
+            vy: (isNorth ? -1 : 1) * phys.oceanBaseSpeed * 0.8,              // 強い極方向
+            strength: 1.2,
+            type: isNorth ? 'MLC_N' : 'MLC_S',
+            state: 'active', age: 0, history: []
+        });
+    }
+
+    const mlcPoints: StreamlinePoint[][] = [];
+    for (const a of mlcAgents) {
+        mlcPoints[a.id] = [{
+            x: a.x, y: a.y, lon: getLonFromCol(a.x), lat: getLatFromRow(a.y), vx: a.vx, vy: a.vy
+        }];
+    }
+
+    const MLC_MAX_STEPS = BASE_MAX_STEPS;
+    const startStepPhase3 = debugFrames.length;
+
+    for (let step = 0; step < MLC_MAX_STEPS; step++) {
+        const frameSnapshot: DebugAgentSnapshot[] = [];
+        const activeAgents = mlcAgents.filter(a => a.active);
+        if (activeAgents.length === 0) break;
+
+        for (const agent of mlcAgents) {
+            if (!agent.active && !isDebugRun) continue;
+            if (!agent.active && isDebugRun) {
+                frameSnapshot.push({
+                    id: agent.id, type: agent.type, x: agent.x, y: agent.y, vx: agent.vx, vy: agent.vy,
+                    state: agent.state, cause: agent.cause
+                });
+                continue;
+            }
+
+            // Stagnation check
+            agent.history.push({ x: agent.x, y: agent.y });
+            if (agent.history.length > HISTORY_SIZE) agent.history.shift();
+            let isStuck = false;
+            if (agent.history.length === HISTORY_SIZE) {
+                const oldPos = agent.history[0];
+                const dx = Math.abs(agent.x - oldPos.x);
+                const dy = Math.abs(agent.y - oldPos.y);
+                const dxWrap = Math.min(dx, cols - dx);
+                if (dxWrap + dy < STAGNATION_THRESHOLD) isStuck = true;
+            }
+            if (isStuck) {
+                agent.active = false; agent.state = 'impact'; agent.cause = 'MLC Stagnation';
+                impactResults.push({ x: agent.x, y: agent.y, lat: getLatFromRow(agent.y), lon: getLonFromCol(agent.x), type: 'MLC' });
+                continue;
+            }
+
+            if (agent.active) {
+                for (let ss = 0; ss < SUB_STEPS; ss++) {
+                    const currentLatAbs = Math.abs(getLatFromRow(agent.y));
+
+                    // Ferrel cell に入ったら東向き、それ以前は西向き
+                    const inFerrelCell = currentLatAbs > hadleyEdge;
+                    const lateralTarget = inFerrelCell
+                        ? phys.oceanBaseSpeed * 1.0     // 西風海流 (東向き)
+                        : -phys.oceanBaseSpeed * 0.4;   // 沿岸寄せ (西向き)
+
+                    const polewardTarget = (agent.type === 'MLC_N' ? -1 : 1)
+                        * phys.oceanBaseSpeed
+                        * (inFerrelCell ? 0.25 : 0.7); // Ferrel に入ったら極方向力は弱める
+
+                    const { dist: currentDist, gx: currentGx, gy: currentGy } = getEnvironment(agent.x, agent.y);
+                    const isNearCoast = currentDist > -60;
+
+                    let ax = (lateralTarget - agent.vx) * 0.08;
+                    let ay = (polewardTarget - agent.vy) * 0.08;
+
+                    // 沿岸反発
+                    if (isNearCoast) {
+                        const gradLen = Math.sqrt(currentGx * currentGx + currentGy * currentGy);
+                        if (gradLen > 0.0001) {
+                            const nx = currentGx / gradLen;
+                            const ny = currentGy / gradLen;
+                            const repulse = phys.oceanRepulseStrength * (1.0 - (currentDist / -60));
+                            ax -= nx * repulse;
+                            ay -= ny * repulse;
+                        }
+                    }
+
+                    // 次セル境界 (Ferrel/Polar) を超えそうなら停止
+                    if (currentLatAbs > ferrelEdge - 2) {
+                        agent.active = false; agent.state = 'dead'; agent.cause = 'Cell Boundary Limit';
+                        break;
+                    }
+
+                    let nvx = agent.vx + ax;
+                    let nvy = agent.vy + ay;
+                    const nextX = agent.x + nvx * DT;
+                    const nextY = agent.y + nvy * DT;
+
+                    const { dist: distNew, gx: newGx, gy: newGy } = getEnvironment(nextX, nextY);
+                    if (distNew > 0) {
+                        // 上陸 = impact
+                        impactResults.push({
+                            x: nextX, y: nextY, lat: getLatFromRow(nextY), lon: getLonFromCol(nextX), type: 'MLC'
+                        });
+                        agent.active = false; agent.state = 'impact'; agent.cause = 'MLC Coast Impact';
+                        break;
+                    }
+
+                    agent.x = nextX; agent.y = nextY;
+                    agent.vx = nvx; agent.vy = nvy;
+
+                    // Speed cap
+                    const speed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
+                    const maxSpeed = phys.oceanBaseSpeed * phys.oceanMaxSpeedMultiplier;
+                    if (speed > maxSpeed) {
+                        agent.vx = (agent.vx / speed) * maxSpeed;
+                        agent.vy = (agent.vy / speed) * maxSpeed;
+                    }
+
+                    if (Math.abs(getLatFromRow(agent.y)) > 88) {
+                        agent.active = false; agent.state = 'dead'; agent.cause = 'Polar Exit'; break;
+                    }
+                }
+            }
+
+            agent.age++;
+            if (agent.active && mlcPoints[agent.id]) {
+                mlcPoints[agent.id].push({
+                    x: agent.x, y: agent.y, lon: getLonFromCol(agent.x), lat: getLatFromRow(agent.y),
+                    vx: agent.vx, vy: agent.vy
+                });
+            }
+
+            if (isDebugRun) {
+                frameSnapshot.push({
+                    id: agent.id, type: agent.type, x: agent.x, y: agent.y, vx: agent.vx, vy: agent.vy,
+                    state: agent.state, cause: agent.cause
+                });
+            }
+        }
+
+        if (isDebugRun) debugFrames.push({ step: startStepPhase3 + step, agents: frameSnapshot });
+        if (mlcAgents.every(a => !a.active)) break;
+    }
+
+    for (const agent of mlcAgents) {
+        if (mlcPoints[agent.id] && mlcPoints[agent.id].length > 5) {
+            finishedLines.push({
+                points: mlcPoints[agent.id],
+                strength: agent.strength,
+                type: agent.type === 'MLC_N' ? 'mlc_n' : 'mlc_s'
+            });
         }
     }
 

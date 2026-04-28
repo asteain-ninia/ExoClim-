@@ -60,7 +60,10 @@ export const runSimulation = async (
   onProgress(55, "Step 3: Ocean Currents...", 'step3');
   // Unit G: Pass derived gap for alignment
   const physForOcean = { ...phys, oceanEcLatGap: windRes.oceanEcLatGapDerived };
-  const oceanRes = computeOceanCurrents(grid, circulationRes.itczLines, physForOcean, config, planet);
+  const oceanRes = computeOceanCurrents(
+      grid, circulationRes.itczLines, physForOcean, config, planet,
+      windRes.cellBoundariesDeg
+  );
   await new Promise(r => setTimeout(r, 30));
 
   // --- Step 4: Airflow Detailed (placeholder) ---

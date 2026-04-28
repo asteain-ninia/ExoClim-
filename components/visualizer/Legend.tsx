@@ -24,6 +24,12 @@ const Legend: React.FC<{ mode: string }> = ({ mode }) => {
                              ></div>
                              <span className="text-[10px] font-mono">収束・寒流系 (青)</span>
                         </div>
+                        <div className="flex items-center gap-2 mb-2">
+                             <div className="w-12 h-5 rounded border border-white/20"
+                                  style={{ background: 'linear-gradient(to right, #000000, #ff8c28)' }}
+                             ></div>
+                             <span className="text-[10px] font-mono">中緯度海流 (橙)</span>
+                        </div>
                         <div className="flex flex-col gap-1 mt-2 pt-2 border-t border-gray-700">
                              <span className="text-[9px] text-gray-400">進入角と勢い:</span>
                              <div className="flex justify-between text-[9px] font-mono text-gray-500">
@@ -42,6 +48,10 @@ const Legend: React.FC<{ mode: string }> = ({ mode }) => {
                         <div className="flex items-center gap-2 mt-0">
                              <span className="text-cyan-400 font-bold text-lg leading-none">+</span>
                              <span className="text-[10px] text-cyan-200">寒流の沿岸衝突 (EC)</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0">
+                             <span className="text-orange-400 font-bold text-lg leading-none">◆</span>
+                             <span className="text-[10px] text-orange-200">中緯度海流の衝突 (MLC)</span>
                         </div>
                     </div>
                 </div>

@@ -40,7 +40,9 @@ const buildCurrentMaps = (
         const lines = oceanStreamlines[sourceIdx] || [];
 
         for (const line of lines) {
-            const isWarm = line.type === 'main';
+            // main (ECC=赤道反流) と mlc_* (中緯度海流) は暖流系。
+            // split_n / split_s (EC=赤道流) は寒流側に寄りやすい。
+            const isWarm = line.type === 'main' || line.type === 'mlc_n' || line.type === 'mlc_s';
             const target = isWarm ? warm : cold;
             for (const pt of line.points) {
                 const r = Math.floor(pt.y);
